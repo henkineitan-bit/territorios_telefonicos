@@ -330,10 +330,16 @@ def generar_png(territorio, registros):
             "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 14
         )
     except OSError:
-        # Si no están instaladas esas fuentes, usamos la fuente por defecto de Pillow
-        fuente_titulo = ImageFont.load_default()
-        fuente_normal = ImageFont.load_default()
-        fuente_negrita = ImageFont.load_default()
+        # Intentar con fuentes de Windows
+        try:
+            fuente_titulo = ImageFont.truetype("arial.ttf", 20)
+            fuente_normal = ImageFont.truetype("arial.ttf", 14)
+            fuente_negrita = ImageFont.truetype("arialbd.ttf", 14)
+        except OSError:
+            # Último recurso: fuente por defecto de Pillow
+            fuente_titulo = ImageFont.load_default()
+            fuente_normal = ImageFont.load_default()
+            fuente_negrita = ImageFont.load_default()
 
     y = 20
     draw.text((20, y), f"Territorio {territorio['numero']}", fill="black", font=fuente_titulo)

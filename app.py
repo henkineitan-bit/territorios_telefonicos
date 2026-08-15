@@ -68,7 +68,7 @@ def index():
         sql += " ORDER BY (a.fecha_asignado IS NULL), a.fecha_asignado DESC"
     else:
         orden = "numero"  # normalizamos cualquier valor raro que venga por la URL
-        sql += " ORDER BY t.numero"
+        sql += " ORDER BY CAST(t.numero AS INTEGER)"
 
     filas = conn.execute(sql, parametros).fetchall()
 
@@ -495,8 +495,12 @@ def importar_excel_view():
     try:
         resumen = importar_excel(archivo, conn)
     except ValueError as e:
-        conn.close()
+        conn.rollback()
         flash(str(e), "error")
+        return redirect(url_for("importar_excel_view"))
+    except Exception as e:
+        conn.rollback()
+        flash(f"Error inesperado durante la importación: {e}", "error")
         return redirect(url_for("importar_excel_view"))
     finally:
         conn.close()
@@ -539,7 +543,12 @@ def importar_historial_view():
     try:
         resumen = importar_historial(archivo, conn)
     except ValueError as e:
+        conn.rollback()
         flash(str(e), "error")
+        return redirect(url_for("importar_historial_view"))
+    except Exception as e:
+        conn.rollback()
+        flash(f"Error inesperado durante la importación: {e}", "error")
         return redirect(url_for("importar_historial_view"))
     finally:
         conn.close()
@@ -581,7 +590,7 @@ def exportar_excel():
     if territorio_id:
         sql += " WHERE reg.territorio_id = ?"
         parametros = (territorio_id,)
-    sql += " ORDER BY t.numero, reg.id"
+    sql += " ORDER BY CAST(t.numero AS INTEGER), reg.id"
 
     registros = conn.execute(sql, parametros).fetchall()
     conn.close()
