@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block title %}Territorio {{ territorio.numero }}{% endblock %}
+
+{% block content %}
+
+    <p><a href="{{ url_for('index') }}">&larr; Volver al listado</a></p>
+
+    <h2>Territorio {{ territorio.numero }}</h2>
+    <p>
+        Estado:
+        <span class="badge {{ 'badge-en-trabajo' if territorio.estado == 'En trabajo' else 'badge-disponible' }}">
+            {{ territorio.estado }}
+        </span>
+    </p>
+
+    <p class="acciones-secundarias">
+        <a href="{{ url_for('territorio_historial', territorio_id=territorio.id) }}">Ver historial</a>
+        &middot;
+        <a href="{{ url_for('exportar_excel', territorio_id=territorio.id) }}">Exportar Excel</a>
+        &middot;
+        <a href="{{ url_for('territorio_exportar_pdf', territorio_id=territorio.id) }}">Exportar PDF</a>
+        &middot;
+        <a href="{{ url_for('territorio_exportar_png', territorio_id=territorio.id) }}">Exportar PNG</a>
+    </p>
+
+    {% with mensajes = get_flashed_messages(with_categories=true) %}
+        {% if mensajes %}
+            <div class="flashes">
+                {% for categoria, mensaje in mensajes %}
+                    <p class="flash flash-{{ categoria }}">{{ mensaje }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    {% if territorio.estado == 'Disponible' %}
+        <div class="panel-accion">
+            <h3>Asignar territorio</h3>
+            {% if responsables|length == 0 %}
+                <p>No hay responsables activos todavía.</p>
+            {% else %}
+                <form method="post" action="{{ url_for('territorio_asignar', territorio_id=territorio.id) }}">
+                    <label for="responsable_id">Responsable:</label>
+                    <select name="responsable_id" id="responsable_id" required>
+                        {% for r in responsables %}
+                            <option value="{{ r.id }}">{{ r.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                    <input type="text" name="detalles" placeholder="Detalles (opcional)">
+                    <button type="submit">Asignar</button>
+                </form>
+            {% endif %}
+        </div>
+    {% elif territorio.estado == 'En trabajo' %}
+        <div class="panel-accion">
+            <h3>En trabajo</h3>
+            {% if asignacion_activa %}
+                <p>
+                    Responsable actual: <strong>{{ asignacion_activa.responsable_nombre }}</strong>
+                    (desde {{ asignacion_activa.fecha_asignado }})
+                </p>
+            {% endif %}
+            <form method="post" action="{{ url_for('territorio_finalizar', territorio_id=territorio.id) }}">
+                <button type="submit">Finalizar</button>
+            </form>
+        </div>
+    {% endif %}
+
+    <h3>Registros telefónicos</h3>
+
+    {% if registros|length == 0 %}
+        <p>Este territorio todavía no tiene registros cargados.</p>
+    {% else %}
+        <table class="tabla-registros">
+            <thead>
+                <tr>
+                    <th>Dirección</th>
+                    <th>Teléfono</th>
+                    <th>Observaciones</th>
+                    <th>No llamar</th>
+                    <th>¿Funciona?</th>
+                    <th>Notas internas</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for reg in registros %}
+                {# style="display: contents" hace que el <form> no rompa la tabla:
+                   sus hijos (los <td>) se comportan como si estuvieran directo
+                   adentro del <tr>. Así cada fila puede tener su propio form
+                   e ir a "actualizar-registro" sin afectar a las demás filas. #}
+                <form
+                    method="post"
+                    action="{{ url_for('actualizar_registro', territorio_id=territorio.id) }}"
+                    style="display: contents;"
+                >
+                    <input type="hidden" name="registro_id" value="{{ reg.id }}">
+                    <tr>
+                        <td>{{ reg.direccion or "—" }}</td>
+                        <td>{{ reg.telefono }}</td>
+                        <td>
+                            <input type="text" name="observaciones" value="{{ reg.observaciones or '' }}">
+                        </td>
+                        <td class="celda-centrada">
+                            <input type="checkbox" name="no_llamar" {% if reg.no_llamar %}checked{% endif %}>
+                        </td>
+                        <td>
+                            <select name="funcionan">
+                                <option value="" {% if reg.funcionan is none %}selected{% endif %}>Sin verificar</option>
+                                <option value="1" {% if reg.funcionan == 1 %}selected{% endif %}>Sí</option>
+                                <option value="0" {% if reg.funcionan == 0 %}selected{% endif %}>No</option>
+                            </select>
+                        </td>
+                        <td>
+                            <input type="text" name="notas_internas" value="{{ reg.notas_internas or '' }}">
+                        </td>
+                        <td>
+                            <button type="submit">Guardar</button>
+                        </td>
+                    </tr>
+                </form>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+
+{% endblock %}

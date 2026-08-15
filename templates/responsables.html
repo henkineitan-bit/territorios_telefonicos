@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Responsables{% endblock %}
+
+{% block content %}
+
+    <div class="panel-accion">
+        <h3>Nuevo responsable</h3>
+        <form method="post" action="{{ url_for('responsables') }}">
+            <input type="text" name="nombre" placeholder="Nombre y apellido" required>
+            <button type="submit">Agregar</button>
+        </form>
+    </div>
+
+    <h3>Lista de responsables</h3>
+
+    {% if responsables|length == 0 %}
+        <p>Todavía no hay responsables cargados.</p>
+    {% else %}
+        <table class="tabla-responsables">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Estado</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in responsables %}
+                <tr>
+                    <td>{{ r.nombre }}</td>
+                    <td>
+                        <span class="badge {{ 'badge-disponible' if r.activo else 'badge-en-trabajo' }}">
+                            {{ "Activo" if r.activo else "Inactivo" }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if r.activo %}
+                            <form method="post" action="{{ url_for('responsable_desactivar', responsable_id=r.id) }}">
+                                <button type="submit">Desactivar</button>
+                            </form>
+                        {% else %}
+                            <form method="post" action="{{ url_for('responsable_activar', responsable_id=r.id) }}">
+                                <button type="submit">Reactivar</button>
+                            </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+
+{% endblock %}

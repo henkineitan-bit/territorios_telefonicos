@@ -1,0 +1,13 @@
+Mapa de Rutas de Flask (Endpoints)
+Método	Ruta	Vista / Acción
+GET	/	Lista de territorios (con estado, responsable actual y buscador).
+GET	/territorio/<id>	Detalle del territorio con su tabla de teléfonos editable.
+POST	/territorio/<id>/actualizar-registro	Guarda cambios en observaciones, no_llamar, funcionan, notas_internas.
+POST	/territorio/<id>/asignar	Asigna el territorio a un responsable (pasa a "En trabajo").
+POST	/territorio/<id>/finalizar	Cierra la asignación activa (pasa a "Disponible").
+GET	/territorio/<id>/historial	Muestra la cronología de asignaciones y cambios del territorio.
+POST	/importar-excel	Sube y procesa archivo Excel (Upsert en territorios y registros).
+GET	/exportar/excel	Descarga la base completa o filtrada por ?territorio_id=X.
+GET	/territorio/<id>/exportar/pdf	Genera y descarga el PDF imprimible del territorio.
+GET	/territorio/<id>/exportar/png	Genera y descarga imagen PNG rápida del territorio.
+GET/POST	/responsables	ABM simple para listar, crear o desactivar responsables.

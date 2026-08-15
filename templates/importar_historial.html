@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Importar Historial{% endblock %}
+
+{% block content %}
+
+    <h2>Importar Historial de Asignaciones</h2>
+
+    {% with mensajes = get_flashed_messages(with_categories=true) %}
+        {% if mensajes %}
+            <div class="flashes">
+                {% for categoria, mensaje in mensajes %}
+                    <p class="flash flash-{{ categoria }}">{{ mensaje }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <div class="panel-accion">
+        <form method="post" action="{{ url_for('importar_historial_view') }}" enctype="multipart/form-data">
+            <input type="file" name="archivo" accept=".xlsx,.xlsm" required>
+            <button type="submit">Importar</button>
+        </form>
+    </div>
+
+    <h3>Formato esperado</h3>
+    <p>
+        La primera fila del Excel tiene que ser el encabezado, con exactamente estas
+        columnas (el orden no importa, pero los nombres sí):
+    </p>
+    <ul>
+        <li><code>Territorio</code> — obligatorio (número del territorio)</li>
+        <li><code>Responsable</code> — obligatorio (nombre y apellido)</li>
+        <li><code>Fecha asignado</code> — obligatorio (<code>AAAA-MM-DD</code> o <code>DD/MM/AAAA</code>)</li>
+        <li><code>Fecha completado</code> — opcional; si está vacía, la asignación queda abierta</li>
+        <li><code>Detalles</code> — opcional</li>
+    </ul>
+    <p>
+        Si el responsable o el territorio no existen todavía, se crean automáticamente.
+        Si la misma asignación (territorio + responsable + fecha asignado) ya fue
+        importada antes, se actualiza en vez de duplicarse. Al terminar, el estado
+        de cada territorio afectado se recalcula: <strong>En trabajo</strong> si tiene
+        alguna asignación sin fecha de completado, o <strong>Disponible</strong> si no.
+    </p>
+
+{% endblock %}

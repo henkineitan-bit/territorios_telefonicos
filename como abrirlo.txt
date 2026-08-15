@@ -1,0 +1,30 @@
+===================================================
+      GESTOR DE TERRITORIOS TELEFÓNICOS
+===================================================
+
+¿CÓMO INICIAR LA APLICACIÓN?
+
+Opción 1 (La más fácil):
+  - Haz doble clic sobre el archivo "iniciar_app.bat".
+  - Se abrirá la consola y automáticamente tu navegador en http://127.0.0.1:5000
+
+Opción 2 (Desde la terminal / PowerShell):
+  1. Abre la terminal en esta carpeta.
+  2. Ejecuta:
+        python app.py
+  3. Abre tu navegador web e ingresa a:
+        http://127.0.0.1:5000
+
+REQUISITOS (si es una computadora nueva):
+  - Tener Python instalado.
+  - Instalar librerías necesarias ejecutando en la terminal:
+        pip install -r requirements.txt
+
+ESTRUCTURA DE CARPETAS:
+  - app.py: Código principal del servidor.
+  - database.py: Conexión a la base de datos SQLite (territorios.db).
+  - exports.py: Generación de PDF, PNG y Excel.
+  - templates/: Plantillas HTML de la interfaz.
+  - static/: Archivos de diseño CSS y estilos.
+  - recursos_origen/: Archivos Excel originales y documentación PDF.
+  - _historico_versiones/: Copias de seguridad de versiones anteriores (v1 a v8).

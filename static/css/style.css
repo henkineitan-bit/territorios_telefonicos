@@ -1,0 +1,208 @@
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    margin: 0;
+    background-color: #f4f4f4;
+    color: #222;
+}
+
+header {
+    background-color: #2c3e50;
+    color: white;
+    padding: 1rem 2rem;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+main {
+    padding: 2rem;
+}
+
+footer {
+    padding: 1rem 2rem;
+    color: #777;
+    font-size: 0.85rem;
+}
+
+/* --- Buscador --- */
+.buscador {
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.buscador select {
+    padding: 0.5rem;
+    font-size: 1rem;
+}
+
+.buscador a {
+    margin-left: 0.3rem;
+    font-size: 0.9rem;
+}
+
+.buscador input[type="text"] {
+    padding: 0.5rem;
+    font-size: 1rem;
+    width: 250px;
+}
+
+.buscador button {
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+/* --- Tablas --- */
+table {
+    border-collapse: collapse;
+    width: 100%;
+    background-color: white;
+}
+
+th, td {
+    border: 1px solid #ddd;
+    padding: 0.6rem;
+    text-align: left;
+}
+
+th {
+    background-color: #ecf0f1;
+}
+
+/* --- Badges de estado --- */
+.badge {
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    color: white;
+}
+
+.badge-disponible {
+    background-color: #27ae60;
+}
+
+.badge-en-trabajo {
+    background-color: #e67e22;
+}
+
+/* --- Panel de acción (asignar / finalizar) --- */
+.panel-accion {
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.panel-accion form {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 0.5rem;
+}
+
+.panel-accion select,
+.panel-accion input[type="text"] {
+    padding: 0.4rem;
+    font-size: 0.95rem;
+}
+
+.panel-accion button {
+    padding: 0.4rem 1rem;
+    cursor: pointer;
+}
+
+/* --- Navegación --- */
+nav {
+    margin-top: 0.5rem;
+}
+
+nav a {
+    color: white;
+    text-decoration: none;
+    margin-right: 1.5rem;
+    font-size: 0.95rem;
+}
+
+nav a:hover {
+    text-decoration: underline;
+}
+
+/* --- Botones dentro de tablas (desactivar/reactivar) --- */
+.tabla-responsables form {
+    margin: 0;
+}
+
+.tabla-responsables button {
+    padding: 0.3rem 0.8rem;
+    cursor: pointer;
+}
+
+/* --- Tabla editable de registros --- */
+.tabla-registros input[type="text"],
+.tabla-registros select {
+    width: 100%;
+    padding: 0.3rem;
+    font-size: 0.9rem;
+    box-sizing: border-box;
+}
+
+.tabla-registros .celda-centrada {
+    text-align: center;
+}
+
+.tabla-registros button {
+    padding: 0.3rem 0.8rem;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+/* --- Acciones secundarias (historial, exportar) --- */
+.acciones-secundarias {
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+}
+
+/* --- Tabla de historial --- */
+.tabla-historial {
+    margin-bottom: 2rem;
+}
+
+/* --- Mensajes flash --- */
+.flashes {
+    margin-bottom: 1.5rem;
+}
+
+.flash {
+    padding: 0.6rem 1rem;
+    border-radius: 4px;
+    margin-bottom: 0.4rem;
+}
+
+.flash-success {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.flash-warning {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.flash-error {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+code {
+    background-color: #eee;
+    padding: 0.1rem 0.4rem;
+    border-radius: 3px;
+    font-size: 0.9rem;
+}

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Importar Excel{% endblock %}
+
+{% block content %}
+
+    <h2>Importar desde Excel</h2>
+
+    {% with mensajes = get_flashed_messages(with_categories=true) %}
+        {% if mensajes %}
+            <div class="flashes">
+                {% for categoria, mensaje in mensajes %}
+                    <p class="flash flash-{{ categoria }}">{{ mensaje }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <div class="panel-accion">
+        <form method="post" action="{{ url_for('importar_excel_view') }}" enctype="multipart/form-data">
+            <input type="file" name="archivo" accept=".xlsx,.xlsm" required>
+            <button type="submit">Importar</button>
+        </form>
+    </div>
+
+    <h3>Formato esperado</h3>
+    <p>
+        La primera fila del Excel tiene que ser el encabezado, con estas columnas
+        (el orden no importa, pero los nombres sí):
+    </p>
+    <ul>
+        <li><code>numero</code> — obligatorio (número del territorio)</li>
+        <li><code>telefono</code> — obligatorio</li>
+        <li><code>direccion</code> — opcional</li>
+        <li><code>observaciones</code> — opcional</li>
+        <li><code>no_llamar</code> — opcional (si / no / 1 / 0, vacío = no)</li>
+        <li><code>funcionan</code> — opcional (si / no / 1 / 0, vacío = sin verificar)</li>
+        <li><code>notas_internas</code> — opcional</li>
+    </ul>
+    <p>
+        Si el territorio ya existe (mismo número), no se duplica. Si el registro
+        telefónico ya existe (misma dirección + teléfono en ese territorio), se
+        actualiza en vez de crear uno nuevo.
+    </p>
+
+{% endblock %}

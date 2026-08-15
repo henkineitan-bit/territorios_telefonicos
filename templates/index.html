@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Territorios{% endblock %}
+
+{% block content %}
+
+    <form method="GET" action="/" class="buscador">
+        <input
+            type="text"
+            name="q"
+            placeholder="Buscar Nº..."
+            value="{{ q }}"
+        >
+
+        <select name="estado">
+            <option value="" {% if not estado %}selected{% endif %}>Estado: Todos</option>
+            <option value="Disponible" {% if estado == 'Disponible' %}selected{% endif %}>Disponible</option>
+            <option value="En trabajo" {% if estado == 'En trabajo' %}selected{% endif %}>En trabajo</option>
+        </select>
+
+        <select name="responsable_id">
+            <option value="" {% if not responsable_id %}selected{% endif %}>Responsable: Todos</option>
+            {% for r in responsables %}
+                <option value="{{ r.id }}" {% if responsable_id == r.id|string %}selected{% endif %}>
+                    {{ r.nombre }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <select name="orden">
+            <option value="numero" {% if orden == 'numero' %}selected{% endif %}>Ordenar por: Número</option>
+            <option value="antiguos" {% if orden == 'antiguos' %}selected{% endif %}>Más antiguos asignados</option>
+            <option value="recientes" {% if orden == 'recientes' %}selected{% endif %}>Más recientes</option>
+        </select>
+
+        <button type="submit">Filtrar</button>
+        <a href="/">Limpiar</a>
+    </form>
+
+    {% if territorios|length == 0 %}
+        <p>No se encontraron territorios.</p>
+    {% else %}
+        <table class="tabla-territorios">
+            <thead>
+                <tr>
+                    <th>Número</th>
+                    <th>Estado</th>
+                    <th>Responsable actual</th>
+                    <th>Asignado el</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in territorios %}
+                <tr>
+                    <td>{{ t.numero }}</td>
+                    <td>
+                        <span class="badge {{ 'badge-en-trabajo' if t.estado == 'En trabajo' else 'badge-disponible' }}">
+                            {{ t.estado }}
+                        </span>
+                    </td>
+                    <td>{{ t.responsable or "—" }}</td>
+                    <td>{{ t.asignado_texto }}</td>
+                    <td>
+                        <a href="{{ url_for('territorio_detalle', territorio_id=t.id) }}">Ver detalle</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+
+{% endblock %}

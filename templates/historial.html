@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Historial - Territorio {{ territorio.numero }}{% endblock %}
+
+{% block content %}
+
+    <p><a href="{{ url_for('territorio_detalle', territorio_id=territorio.id) }}">&larr; Volver al territorio</a></p>
+
+    <h2>Historial - Territorio {{ territorio.numero }}</h2>
+
+    <h3>Asignaciones</h3>
+    {% if asignaciones|length == 0 %}
+        <p>Este territorio todavía no fue asignado nunca.</p>
+    {% else %}
+        <table class="tabla-historial">
+            <thead>
+                <tr>
+                    <th>Responsable</th>
+                    <th>Asignado</th>
+                    <th>Finalizado</th>
+                    <th>Detalles</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in asignaciones %}
+                <tr>
+                    <td>{{ a.responsable_nombre }}</td>
+                    <td>{{ a.fecha_asignado }}</td>
+                    <td>
+                        {% if a.fecha_finalizacion %}
+                            {{ a.fecha_finalizacion }}
+                        {% else %}
+                            <span class="badge badge-en-trabajo">En curso</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ a.detalles or "—" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+
+    <h3>Actividad</h3>
+    {% if actividad|length == 0 %}
+        <p>Todavía no hay actividad registrada para este territorio.</p>
+    {% else %}
+        <table class="tabla-historial">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Tipo</th>
+                    <th>Descripción</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ev in actividad %}
+                <tr>
+                    <td>{{ ev.fecha }}</td>
+                    <td>{{ ev.tipo }}</td>
+                    <td>{{ ev.descripcion }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+
+{% endblock %}
