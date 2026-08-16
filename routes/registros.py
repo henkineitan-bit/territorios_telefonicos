@@ -1,21 +1,23 @@
 """
-app.py
-------
-Punto de entrada de la aplicación Flask.
-Por ahora solo tiene la ruta "/" para verificar que todo funciona.
-Las rutas del mapa de endpoints (territorio/<id>, asignar, etc.)
-las iremos agregando en los próximos pasos.
+routes/registros.py
+-------------------
+Rutas para la gestión y exportación de registros telefónicos:
+- Actualización inline de registros (observaciones, no llamar, funcionan)
+- Importación masiva desde Excel de registros
+- Importación masiva de historial de asignaciones
+- Exportación a Excel, PDF y PNG
 """
 
-from flask import (
-    Flask, render_template, request, abort, redirect, url_for,
-    send_file, flash,
-)
 from datetime import datetime
+from flask import render_template, request, abort, redirect, url_for, flash, send_file
 from database import get_connection
-from exports import importar_excel, generar_excel, generar_pdf, generar_png, importar_historial
-
-
+from exports import (
+    importar_excel,
+    generar_excel,
+    generar_pdf,
+    generar_png,
+    importar_historial,
+)
 
 
 def register_registros(app):
@@ -78,10 +80,6 @@ def register_registros(app):
         conn.close()
 
         return redirect(url_for("territorio_detalle", territorio_id=territorio_id))
-
-
-    import math
-
 
     @app.route("/importar-excel", methods=["GET", "POST"])
     def importar_excel_view():
@@ -274,8 +272,3 @@ def register_registros(app):
             mimetype="image/png",
         )
 
-
-    if __name__ == "__main__":
-        # debug=True: reinicia el servidor solo al guardar cambios,
-        # y muestra errores detallados en el navegador. Muy útil mientras aprendés.
-        app.run(debug=True, port=5000)

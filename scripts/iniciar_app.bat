@@ -1,5 +1,7 @@
 @echo off
 title Gestor de Territorios Telefonicos
+cd /d "%~dp0\.."
+
 echo ===================================================
 echo     Iniciando Gestor de Territorios Telefonicos
 echo ===================================================
@@ -11,3 +13,4 @@ echo Presiona Ctrl+C en esta ventana para detener el servidor.
 echo.
 python app.py
 pause
+

@@ -139,7 +139,11 @@
                             type="button"
                             class="btn btn-sm btn-icon"
                             title="Editar responsable"
-                            onclick="abrirModalEditar({{ r.id }}, '{{ r.nombre|escape }}', '{{ r.telefono or '' }}', '{{ r.email or '' }}')"
+                            data-id="{{ r.id }}"
+                            data-nombre="{{ r.nombre }}"
+                            data-telefono="{{ r.telefono or '' }}"
+                            data-email="{{ r.email or '' }}"
+                            onclick="abrirModalEditarDesdeBoton(this)"
                         >
                             Editar
                         </button>
@@ -150,7 +154,8 @@
                                 method="post"
                                 action="{{ url_for('responsable_desactivar', responsable_id=r.id, q=q, estado=estado, orden=orden, page=page, per_page=per_page) }}"
                                 class="form-en-linea"
-                                onsubmit="return confirmarAccion('¿Estás seguro de que deseas desactivar a {{ r.nombre }}?');"
+                                data-nombre="{{ r.nombre }}"
+                                onsubmit="return confirmarDesactivacion(this);"
                             >
                                 <button type="submit" class="btn btn-sm btn-danger">Desactivar</button>
                             </form>
@@ -236,15 +241,19 @@
     <!-- Scripts JavaScript para interactividad -->
     <script>
         // Modal de edición
-        function abrirModalEditar(id, nombre, telefono, email) {
+        function abrirModalEditarDesdeBoton(btn) {
+            const id = btn.dataset.id;
+            const nombre = btn.dataset.nombre || '';
+            const telefono = btn.dataset.telefono || '';
+            const email = btn.dataset.email || '';
+
             const modal = document.getElementById('modal-editar');
             const form = document.getElementById('form-editar-responsable');
             form.action = `/responsables/${id}/editar?q={{ q }}&estado={{ estado }}&orden={{ orden }}&page={{ page }}&per_page={{ per_page }}`;
             document.getElementById('edit-nombre').value = nombre;
-            document.getElementById('edit-telefono').value = telefono || '';
-            document.getElementById('edit-email').value = email || '';
+            document.getElementById('edit-telefono').value = telefono;
+            document.getElementById('edit-email').value = email;
             modal.classList.remove('oculto');
-            // Modal ahora tiene display flex por css si no está oculto
             modal.style.display = 'flex';
             document.getElementById('edit-nombre').focus();
         }
@@ -263,8 +272,9 @@
         };
 
         // Confirmación para desactivar
-        function confirmarAccion(mensaje) {
-            return confirm(mensaje);
+        function confirmarDesactivacion(form) {
+            const nombre = form.dataset.nombre || 'este responsable';
+            return confirm(`¿Estás seguro de que deseas desactivar a ${nombre}?`);
         }
 
         // Selección múltiple y acciones en lote

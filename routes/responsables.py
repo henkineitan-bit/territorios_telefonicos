@@ -1,21 +1,18 @@
 """
-app.py
-------
-Punto de entrada de la aplicación Flask.
-Por ahora solo tiene la ruta "/" para verificar que todo funciona.
-Las rutas del mapa de endpoints (territorio/<id>, asignar, etc.)
-las iremos agregando en los próximos pasos.
+routes/responsables.py
+----------------------
+Rutas para la gestión de responsables/publicadores:
+- Listado con filtros, ordenamiento y paginación
+- Creación de nuevo responsable
+- Edición de datos de contacto
+- Activación/desactivación individual
+- Acciones masivas en lote
 """
 
-from flask import (
-    Flask, render_template, request, abort, redirect, url_for,
-    send_file, flash,
-)
+import math
 from datetime import datetime
+from flask import render_template, request, abort, redirect, url_for, flash
 from database import get_connection
-from exports import importar_excel, generar_excel, generar_pdf, generar_png, importar_historial
-
-
 
 
 def register_responsables(app):

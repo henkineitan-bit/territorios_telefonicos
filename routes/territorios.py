@@ -1,21 +1,16 @@
 """
-app.py
-------
-Punto de entrada de la aplicación Flask.
-Por ahora solo tiene la ruta "/" para verificar que todo funciona.
-Las rutas del mapa de endpoints (territorio/<id>, asignar, etc.)
-las iremos agregando en los próximos pasos.
+routes/territorios.py
+---------------------
+Rutas para la gestión y visualización de territorios y sus asignaciones:
+- Listado principal (index) con filtros y ordenamiento
+- Vista de detalle de territorio
+- Historial de asignaciones y actividades
+- Asignación y finalización de trabajo en territorios
 """
 
-from flask import (
-    Flask, render_template, request, abort, redirect, url_for,
-    send_file, flash,
-)
 from datetime import datetime
+from flask import render_template, request, abort, redirect, url_for, flash
 from database import get_connection
-from exports import importar_excel, generar_excel, generar_pdf, generar_png, importar_historial
-
-
 
 
 def register_territorios(app):
