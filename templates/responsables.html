@@ -1,47 +1,166 @@
 {% extends "base.html" %}
 
-{% block title %}Responsables{% endblock %}
+{% block title %}Responsables - Gestión de Territorios{% endblock %}
 
 {% block content %}
 
+    {% with mensajes = get_flashed_messages(with_categories=true) %}
+        {% if mensajes %}
+            <div class="flashes">
+                {% for categoria, mensaje in mensajes %}
+                    <p class="flash flash-{{ categoria }}">{{ mensaje }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- Panel de Nuevo Responsable -->
     <div class="panel-accion">
-        <h3>Nuevo responsable</h3>
-        <form method="post" action="{{ url_for('responsables') }}">
-            <input type="text" name="nombre" placeholder="Nombre y apellido" required>
-            <button type="submit">Agregar</button>
+        <h3>➕ Nuevo Responsable</h3>
+        <form method="post" action="{{ url_for('responsables') }}" class="form-nuevo-resp">
+            <input type="text" name="nombre" placeholder="Nombre y apellido *" required>
+            <input type="text" name="telefono" placeholder="Teléfono (opcional)">
+            <input type="email" name="email" placeholder="Email (opcional)">
+            <button type="submit" class="btn btn-primary">Agregar</button>
         </form>
     </div>
 
-    <h3>Lista de responsables</h3>
+    <!-- Buscador y Filtros -->
+    <form method="GET" action="{{ url_for('responsables') }}" class="buscador buscador-responsables">
+        <input
+            type="text"
+            name="q"
+            placeholder="Buscar por nombre, teléfono o email..."
+            value="{{ q }}"
+            class="input-search"
+        >
+
+        <select name="estado">
+            <option value="" {% if not estado %}selected{% endif %}>Estado: Todos</option>
+            <option value="1" {% if estado == '1' %}selected{% endif %}>Solo Activos</option>
+            <option value="0" {% if estado == '0' %}selected{% endif %}>Solo Inactivos</option>
+        </select>
+
+        <select name="orden">
+            <option value="nombre_asc" {% if orden == 'nombre_asc' %}selected{% endif %}>Ordenar: Nombre (A-Z)</option>
+            <option value="nombre_desc" {% if orden == 'nombre_desc' %}selected{% endif %}>Ordenar: Nombre (Z-A)</option>
+            <option value="territorios_desc" {% if orden == 'territorios_desc' %}selected{% endif %}>Más territorios asignados</option>
+            <option value="fecha_desc" {% if orden == 'fecha_desc' %}selected{% endif %}>Fecha de alta (Recientes)</option>
+            <option value="fecha_asc" {% if orden == 'fecha_asc' %}selected{% endif %}>Fecha de alta (Antiguos)</option>
+        </select>
+
+        <select name="per_page">
+            <option value="10" {% if per_page == '10' %}selected{% endif %}>10 por pág.</option>
+            <option value="20" {% if per_page == '20' %}selected{% endif %}>20 por pág.</option>
+            <option value="50" {% if per_page == '50' %}selected{% endif %}>50 por pág.</option>
+            <option value="todos" {% if per_page == 'todos' %}selected{% endif %}>Ver todos</option>
+        </select>
+
+        <button type="submit" class="btn">Filtrar</button>
+        <a href="{{ url_for('responsables') }}" class="btn-link">Limpiar</a>
+    </form>
+
+    <div class="header-tabla-responsables">
+        <h3>Lista de Responsables <small>({{ total_items }} en total)</small></h3>
+        
+        <!-- Barra de Acciones en Lote -->
+        <div id="barra-lote" class="barra-acciones-lote" style="display: none;">
+            <span id="contador-seleccionados">0 seleccionados</span>
+            <button type="button" class="btn btn-sm btn-warning" onclick="ejecutarAccionLote('desactivar')">Desactivar seleccionados</button>
+            <button type="button" class="btn btn-sm btn-success" onclick="ejecutarAccionLote('activar')">Reactivar seleccionados</button>
+        </div>
+    </div>
+
+    <!-- Formulario oculto para acciones en lote -->
+    <form id="form-lote" method="post" action="{{ url_for('responsables_lote', q=q, estado=estado, orden=orden, page=page, per_page=per_page) }}" style="display:none;">
+        <input type="hidden" name="accion" id="lote-accion">
+        <div id="lote-inputs-container"></div>
+    </form>
 
     {% if responsables|length == 0 %}
-        <p>Todavía no hay responsables cargados.</p>
+        <p class="sin-resultados">No se encontraron responsables con los filtros aplicados.</p>
     {% else %}
         <table class="tabla-responsables">
             <thead>
                 <tr>
+                    <th style="width: 40px; text-align: center;">
+                        <input type="checkbox" id="check-todos" title="Seleccionar todos" onchange="toggleSelectTodos(this)">
+                    </th>
                     <th>Nombre</th>
-                    <th>Estado</th>
-                    <th></th>
+                    <th>Contacto</th>
+                    <th style="text-align: center;">Territorios Asignados</th>
+                    <th>Fecha de Alta</th>
+                    <th style="text-align: center;">Estado</th>
+                    <th style="text-align: right;">Acciones</th>
                 </tr>
             </thead>
             <tbody>
                 {% for r in responsables %}
-                <tr>
-                    <td>{{ r.nombre }}</td>
+                <tr id="fila-resp-{{ r.id }}" class="{{ 'fila-inactiva' if not r.activo else '' }}">
+                    <td style="text-align: center;">
+                        <input type="checkbox" class="check-responsable" value="{{ r.id }}" onchange="actualizarSeleccion()">
+                    </td>
                     <td>
+                        <strong>{{ r.nombre }}</strong>
+                    </td>
+                    <td>
+                        <div class="datos-contacto">
+                            {% if r.telefono %}
+                                <div>📞 <a href="tel:{{ r.telefono }}">{{ r.telefono }}</a></div>
+                            {% endif %}
+                            {% if r.email %}
+                                <div>✉️ <a href="mailto:{{ r.email }}">{{ r.email }}</a></div>
+                            {% endif %}
+                            {% if not r.telefono and not r.email %}
+                                <span class="texto-apagado">—</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td style="text-align: center;">
+                        {% if r.territorios_asignados > 0 %}
+                            <a href="{{ url_for('index', responsable_id=r.id) }}" class="badge badge-territorios" title="Ver territorios de este responsable">
+                                📌 {{ r.territorios_asignados }} territorio{{ 's' if r.territorios_asignados > 1 else '' }}
+                            </a>
+                        {% else %}
+                            <span class="badge badge-libre">0 libres</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {{ r.fecha_alta or "—" }}
+                    </td>
+                    <td style="text-align: center;">
                         <span class="badge {{ 'badge-disponible' if r.activo else 'badge-en-trabajo' }}">
                             {{ "Activo" if r.activo else "Inactivo" }}
                         </span>
                     </td>
-                    <td>
+                    <td style="text-align: right; white-space: nowrap;">
+                        <!-- Botón Editar ✏️ -->
+                        <button
+                            type="button"
+                            class="btn btn-sm btn-icon"
+                            title="Editar responsable"
+                            onclick="abrirModalEditar({{ r.id }}, '{{ r.nombre|escape }}', '{{ r.telefono or '' }}', '{{ r.email or '' }}')"
+                        >
+                            ✏️ Editar
+                        </button>
+
+                        <!-- Botón Activar / Desactivar con confirmación -->
                         {% if r.activo %}
-                            <form method="post" action="{{ url_for('responsable_desactivar', responsable_id=r.id) }}">
-                                <button type="submit">Desactivar</button>
+                            <form
+                                method="post"
+                                action="{{ url_for('responsable_desactivar', responsable_id=r.id, q=q, estado=estado, orden=orden, page=page, per_page=per_page) }}"
+                                style="display:inline;"
+                                onsubmit="return confirmarAccion('¿Estás seguro de que deseas desactivar a {{ r.nombre }}?');"
+                            >
+                                <button type="submit" class="btn btn-sm btn-danger">Desactivar</button>
                             </form>
                         {% else %}
-                            <form method="post" action="{{ url_for('responsable_activar', responsable_id=r.id) }}">
-                                <button type="submit">Reactivar</button>
+                            <form
+                                method="post"
+                                action="{{ url_for('responsable_activar', responsable_id=r.id, q=q, estado=estado, orden=orden, page=page, per_page=per_page) }}"
+                                style="display:inline;"
+                            >
+                                <button type="submit" class="btn btn-sm btn-success">Reactivar</button>
                             </form>
                         {% endif %}
                     </td>
@@ -49,6 +168,151 @@
                 {% endfor %}
             </tbody>
         </table>
+
+        <!-- Paginación y contador -->
+        <div class="paginacion-container">
+            <div class="paginacion-info">
+                Mostrando <strong>{{ start_item }}</strong> a <strong>{{ end_item }}</strong> de <strong>{{ total_items }}</strong> responsables
+            </div>
+            
+            {% if total_pages > 1 %}
+                <div class="paginacion-controles">
+                    {% if page > 1 %}
+                        <a href="{{ url_for('responsables', q=q, estado=estado, orden=orden, per_page=per_page, page=page-1) }}" class="btn-pag">« Anterior</a>
+                    {% else %}
+                        <span class="btn-pag disabled">« Anterior</span>
+                    {% endif %}
+
+                    {% for p in range(1, total_pages + 1) %}
+                        {% if p == page %}
+                            <span class="btn-pag active">{{ p }}</span>
+                        {% elif p <= 3 or p >= total_pages - 2 or (p >= page - 1 and p <= page + 1) %}
+                            <a href="{{ url_for('responsables', q=q, estado=estado, orden=orden, per_page=per_page, page=p) }}" class="btn-pag">{{ p }}</a>
+                        {% elif p == 4 or p == total_pages - 3 %}
+                            <span class="btn-pag-ellipsis">...</span>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page < total_pages %}
+                        <a href="{{ url_for('responsables', q=q, estado=estado, orden=orden, per_page=per_page, page=page+1) }}" class="btn-pag">Siguiente »</a>
+                    {% else %}
+                        <span class="btn-pag disabled">Siguiente »</span>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
     {% endif %}
+
+    <!-- Modal de Edición de Responsable -->
+    <div id="modal-editar" class="modal-overlay" style="display: none;">
+        <div class="modal-contenido">
+            <div class="modal-header">
+                <h3>✏️ Editar Responsable</h3>
+                <button type="button" class="modal-cerrar" onclick="cerrarModalEditar()">&times;</button>
+            </div>
+            <form id="form-editar-responsable" method="post" action="">
+                <div class="modal-body">
+                    <div class="form-grupo">
+                        <label for="edit-nombre">Nombre y apellido *</label>
+                        <input type="text" id="edit-nombre" name="nombre" required>
+                    </div>
+                    <div class="form-grupo">
+                        <label for="edit-telefono">Teléfono</label>
+                        <input type="text" id="edit-telefono" name="telefono" placeholder="Ej: +54 9 11 1234-5678">
+                    </div>
+                    <div class="form-grupo">
+                        <label for="edit-email">Correo Electrónico</label>
+                        <input type="email" id="edit-email" name="email" placeholder="Ej: nombre@ejemplo.com">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="cerrarModalEditar()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts JavaScript para interactividad -->
+    <script>
+        // Modal de edición
+        function abrirModalEditar(id, nombre, telefono, email) {
+            const modal = document.getElementById('modal-editar');
+            const form = document.getElementById('form-editar-responsable');
+            form.action = `/responsables/${id}/editar?q={{ q }}&estado={{ estado }}&orden={{ orden }}&page={{ page }}&per_page={{ per_page }}`;
+            document.getElementById('edit-nombre').value = nombre;
+            document.getElementById('edit-telefono').value = telefono || '';
+            document.getElementById('edit-email').value = email || '';
+            modal.style.display = 'flex';
+            document.getElementById('edit-nombre').focus();
+        }
+
+        function cerrarModalEditar() {
+            document.getElementById('modal-editar').style.display = 'none';
+        }
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('modal-editar');
+            if (event.target === modal) {
+                cerrarModalEditar();
+            }
+        };
+
+        // Confirmación para desactivar
+        function confirmarAccion(mensaje) {
+            return confirm(mensaje);
+        }
+
+        // Selección múltiple y acciones en lote
+        function toggleSelectTodos(master) {
+            const checkboxes = document.querySelectorAll('.check-responsable');
+            checkboxes.forEach(cb => cb.checked = master.checked);
+            actualizarSeleccion();
+        }
+
+        function actualizarSeleccion() {
+            const seleccionados = document.querySelectorAll('.check-responsable:checked');
+            const barra = document.getElementById('barra-lote');
+            const contador = document.getElementById('contador-seleccionados');
+            const master = document.getElementById('check-todos');
+            const todos = document.querySelectorAll('.check-responsable');
+
+            if (seleccionados.length > 0) {
+                barra.style.display = 'inline-flex';
+                contador.textContent = `${seleccionados.length} seleccionado${seleccionados.length > 1 ? 's' : ''}`;
+            } else {
+                barra.style.display = 'none';
+            }
+
+            if (master && todos.length > 0) {
+                master.checked = (seleccionados.length === todos.length);
+            }
+        }
+
+        function ejecutarAccionLote(accion) {
+            const seleccionados = document.querySelectorAll('.check-responsable:checked');
+            if (seleccionados.length === 0) return;
+
+            const accionTexto = accion === 'desactivar' ? 'desactivar' : 'reactivar';
+            if (!confirm(`¿Estás seguro de que deseas ${accionTexto} a los ${seleccionados.length} responsables seleccionados?`)) {
+                return;
+            }
+
+            const form = document.getElementById('form-lote');
+            const container = document.getElementById('lote-inputs-container');
+            document.getElementById('lote-accion').value = accion;
+            container.innerHTML = '';
+
+            seleccionados.forEach(cb => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'responsables_ids';
+                input.value = cb.value;
+                container.appendChild(input);
+            });
+
+            form.submit();
+        }
+    </script>
 
 {% endblock %}

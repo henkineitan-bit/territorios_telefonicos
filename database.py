@@ -20,6 +20,35 @@ DATABASE = os.path.join(BASE_DIR, "territorios.db")
 SCHEMA = os.path.join(BASE_DIR, "schema.sql")
 
 
+def migrate_db(conn=None):
+    """
+    Verifica y aplica migraciones incrementales sobre la base de datos existente
+    sin alterar ni perder datos previos.
+    """
+    should_close = False
+    if conn is None:
+        conn = get_connection()
+        should_close = True
+
+    cursor = conn.cursor()
+    # Obtenemos las columnas actuales de 'responsables'
+    cursor.execute("PRAGMA table_info(responsables)")
+    columnas = [col["name"] for col in cursor.fetchall()]
+
+    if "telefono" not in columnas:
+        cursor.execute("ALTER TABLE responsables ADD COLUMN telefono TEXT DEFAULT NULL")
+    if "email" not in columnas:
+        cursor.execute("ALTER TABLE responsables ADD COLUMN email TEXT DEFAULT NULL")
+    if "fecha_alta" not in columnas:
+        cursor.execute("ALTER TABLE responsables ADD COLUMN fecha_alta TEXT DEFAULT NULL")
+        # Asignamos la fecha de hoy como fecha de alta a los registros previos que no tengan
+        cursor.execute("UPDATE responsables SET fecha_alta = date('now') WHERE fecha_alta IS NULL")
+
+    conn.commit()
+    if should_close:
+        conn.close()
+
+
 def get_connection():
     """
     Devuelve una conexión a la base de datos.
@@ -42,6 +71,7 @@ def init_db():
     conn = get_connection()
     with open(SCHEMA, "r", encoding="utf-8") as f:
         conn.executescript(f.read())
+    migrate_db(conn)
     conn.commit()
     conn.close()
     print(f"Base de datos inicializada correctamente en: {DATABASE}")
@@ -49,3 +79,4 @@ def init_db():
 
 if __name__ == "__main__":
     init_db()
+

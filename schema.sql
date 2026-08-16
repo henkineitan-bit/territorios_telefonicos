@@ -9,7 +9,10 @@ CREATE TABLE IF NOT EXISTS territorios (
 CREATE TABLE IF NOT EXISTS responsables (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     nombre TEXT NOT NULL,
-    activo INTEGER DEFAULT 1 -- 1: activo, 0: inactivo
+    activo INTEGER DEFAULT 1, -- 1: activo, 0: inactivo
+    telefono TEXT DEFAULT NULL,
+    email TEXT DEFAULT NULL,
+    fecha_alta TEXT DEFAULT NULL
 );
 
 -- 3. Tabla de Registros Telefónicos
