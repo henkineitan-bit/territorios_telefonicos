@@ -26,7 +26,7 @@
     </div>
 
     <!-- Buscador y Filtros -->
-    <form method="GET" action="{{ url_for('responsables') }}" class="buscador buscador-responsables">
+    <form method="get" action="{{ url_for('responsables') }}" class="buscador buscador-responsables">
         <input
             type="text"
             name="q"
@@ -64,7 +64,7 @@
         <h3>Lista de Responsables <small>({{ total_items }} en total)</small></h3>
         
         <!-- Barra de Acciones en Lote -->
-        <div id="barra-lote" class="barra-acciones-lote" style="display: none;">
+        <div id="barra-lote" class="barra-acciones-lote oculto">
             <span id="contador-seleccionados">0 seleccionados</span>
             <button type="button" class="btn btn-sm btn-warning" onclick="ejecutarAccionLote('desactivar')">Desactivar seleccionados</button>
             <button type="button" class="btn btn-sm btn-success" onclick="ejecutarAccionLote('activar')">Reactivar seleccionados</button>
@@ -72,7 +72,7 @@
     </div>
 
     <!-- Formulario oculto para acciones en lote -->
-    <form id="form-lote" method="post" action="{{ url_for('responsables_lote', q=q, estado=estado, orden=orden, page=page, per_page=per_page) }}" style="display:none;">
+    <form id="form-lote" method="post" action="{{ url_for('responsables_lote', q=q, estado=estado, orden=orden, page=page, per_page=per_page) }}" class="oculto">
         <input type="hidden" name="accion" id="lote-accion">
         <div id="lote-inputs-container"></div>
     </form>
@@ -83,21 +83,21 @@
         <table class="tabla-responsables">
             <thead>
                 <tr>
-                    <th style="width: 40px; text-align: center;">
+                    <th class="col-check">
                         <input type="checkbox" id="check-todos" title="Seleccionar todos" onchange="toggleSelectTodos(this)">
                     </th>
                     <th>Nombre</th>
                     <th>Contacto</th>
-                    <th style="text-align: center;">Territorios Asignados</th>
+                    <th class="col-centrada">Territorios Asignados</th>
                     <th>Fecha de Alta</th>
-                    <th style="text-align: center;">Estado</th>
-                    <th style="text-align: right;">Acciones</th>
+                    <th class="col-centrada">Estado</th>
+                    <th class="col-derecha">Acciones</th>
                 </tr>
             </thead>
             <tbody>
                 {% for r in responsables %}
                 <tr id="fila-resp-{{ r.id }}" class="{{ 'fila-inactiva' if not r.activo else '' }}">
-                    <td style="text-align: center;">
+                    <td class="col-centrada">
                         <input type="checkbox" class="check-responsable" value="{{ r.id }}" onchange="actualizarSeleccion()">
                     </td>
                     <td>
@@ -116,7 +116,7 @@
                             {% endif %}
                         </div>
                     </td>
-                    <td style="text-align: center;">
+                    <td class="col-centrada">
                         {% if r.territorios_asignados > 0 %}
                             <a href="{{ url_for('index', responsable_id=r.id) }}" class="badge badge-territorios" title="Ver territorios de este responsable">
                                 📌 {{ r.territorios_asignados }} territorio{{ 's' if r.territorios_asignados > 1 else '' }}
@@ -128,12 +128,12 @@
                     <td>
                         {{ r.fecha_alta or "—" }}
                     </td>
-                    <td style="text-align: center;">
+                    <td class="col-centrada">
                         <span class="badge {{ 'badge-disponible' if r.activo else 'badge-en-trabajo' }}">
                             {{ "Activo" if r.activo else "Inactivo" }}
                         </span>
                     </td>
-                    <td style="text-align: right; white-space: nowrap;">
+                    <td class="col-acciones">
                         <!-- Botón Editar ✏️ -->
                         <button
                             type="button"
@@ -149,7 +149,7 @@
                             <form
                                 method="post"
                                 action="{{ url_for('responsable_desactivar', responsable_id=r.id, q=q, estado=estado, orden=orden, page=page, per_page=per_page) }}"
-                                style="display:inline;"
+                                class="form-en-linea"
                                 onsubmit="return confirmarAccion('¿Estás seguro de que deseas desactivar a {{ r.nombre }}?');"
                             >
                                 <button type="submit" class="btn btn-sm btn-danger">Desactivar</button>
@@ -158,7 +158,7 @@
                             <form
                                 method="post"
                                 action="{{ url_for('responsable_activar', responsable_id=r.id, q=q, estado=estado, orden=orden, page=page, per_page=per_page) }}"
-                                style="display:inline;"
+                                class="form-en-linea"
                             >
                                 <button type="submit" class="btn btn-sm btn-success">Reactivar</button>
                             </form>
@@ -204,11 +204,11 @@
     {% endif %}
 
     <!-- Modal de Edición de Responsable -->
-    <div id="modal-editar" class="modal-overlay" style="display: none;">
+    <div id="modal-editar" class="modal-overlay oculto">
         <div class="modal-contenido">
             <div class="modal-header">
                 <h3>✏️ Editar Responsable</h3>
-                <button type="button" class="modal-cerrar" onclick="cerrarModalEditar()">&times;</button>
+                <button type="button" class="modal-cerrar" onclick="cerrarModalEditar()">✕</button>
             </div>
             <form id="form-editar-responsable" method="post" action="">
                 <div class="modal-body">
@@ -243,12 +243,16 @@
             document.getElementById('edit-nombre').value = nombre;
             document.getElementById('edit-telefono').value = telefono || '';
             document.getElementById('edit-email').value = email || '';
+            modal.classList.remove('oculto');
+            // Modal ahora tiene display flex por css si no está oculto
             modal.style.display = 'flex';
             document.getElementById('edit-nombre').focus();
         }
 
         function cerrarModalEditar() {
-            document.getElementById('modal-editar').style.display = 'none';
+            const modal = document.getElementById('modal-editar');
+            modal.classList.add('oculto');
+            modal.style.display = '';
         }
 
         window.onclick = function(event) {
@@ -278,10 +282,10 @@
             const todos = document.querySelectorAll('.check-responsable');
 
             if (seleccionados.length > 0) {
-                barra.style.display = 'inline-flex';
+                barra.classList.remove('oculto');
                 contador.textContent = `${seleccionados.length} seleccionado${seleccionados.length > 1 ? 's' : ''}`;
             } else {
-                barra.style.display = 'none';
+                barra.classList.add('oculto');
             }
 
             if (master && todos.length > 0) {

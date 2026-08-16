@@ -541,6 +541,10 @@ tr:hover {
     color: #666;
 }
 
+.oculto {
+    display: none !important;
+}
+
 code {
     background-color: #eee;
     padding: 0.1rem 0.4rem;
