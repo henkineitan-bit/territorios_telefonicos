@@ -16,7 +16,7 @@ import os
 
 # Rutas absolutas, para que funcione sin importar desde dónde se ejecute
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATABASE = os.path.join(BASE_DIR, "territorios.db")
+DATABASE = os.path.join(BASE_DIR, "data", "territorios.db")
 SCHEMA = os.path.join(BASE_DIR, "schema.sql")
 
 
