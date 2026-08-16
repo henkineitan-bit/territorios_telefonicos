@@ -16,7 +16,7 @@
 
     <!-- Panel de Nuevo Responsable -->
     <div class="panel-accion">
-        <h3>➕ Nuevo Responsable</h3>
+        <h3>Nuevo Responsable</h3>
         <form method="post" action="{{ url_for('responsables') }}" class="form-nuevo-resp">
             <input type="text" name="nombre" placeholder="Nombre y apellido *" required>
             <input type="text" name="telefono" placeholder="Teléfono (opcional)">
@@ -106,10 +106,10 @@
                     <td>
                         <div class="datos-contacto">
                             {% if r.telefono %}
-                                <div>📞 <a href="tel:{{ r.telefono }}">{{ r.telefono }}</a></div>
+                                <div>Tel: <a href="tel:{{ r.telefono }}">{{ r.telefono }}</a></div>
                             {% endif %}
                             {% if r.email %}
-                                <div>✉️ <a href="mailto:{{ r.email }}">{{ r.email }}</a></div>
+                                <div>Email: <a href="mailto:{{ r.email }}">{{ r.email }}</a></div>
                             {% endif %}
                             {% if not r.telefono and not r.email %}
                                 <span class="texto-apagado">—</span>
@@ -119,7 +119,7 @@
                     <td class="col-centrada">
                         {% if r.territorios_asignados > 0 %}
                             <a href="{{ url_for('index', responsable_id=r.id) }}" class="badge badge-territorios" title="Ver territorios de este responsable">
-                                📌 {{ r.territorios_asignados }} territorio{{ 's' if r.territorios_asignados > 1 else '' }}
+                                {{ r.territorios_asignados }} territorio{{ 's' if r.territorios_asignados > 1 else '' }}
                             </a>
                         {% else %}
                             <span class="badge badge-libre">0 libres</span>
@@ -134,14 +134,14 @@
                         </span>
                     </td>
                     <td class="col-acciones">
-                        <!-- Botón Editar ✏️ -->
+                        <!-- Botón Editar -->
                         <button
                             type="button"
                             class="btn btn-sm btn-icon"
                             title="Editar responsable"
                             onclick="abrirModalEditar({{ r.id }}, '{{ r.nombre|escape }}', '{{ r.telefono or '' }}', '{{ r.email or '' }}')"
                         >
-                            ✏️ Editar
+                            Editar
                         </button>
 
                         <!-- Botón Activar / Desactivar con confirmación -->
@@ -207,7 +207,7 @@
     <div id="modal-editar" class="modal-overlay oculto">
         <div class="modal-contenido">
             <div class="modal-header">
-                <h3>✏️ Editar Responsable</h3>
+                <h3>Editar Responsable</h3>
                 <button type="button" class="modal-cerrar" onclick="cerrarModalEditar()">✕</button>
             </div>
             <form id="form-editar-responsable" method="post" action="">
