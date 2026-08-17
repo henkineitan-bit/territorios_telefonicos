@@ -15,9 +15,14 @@ import io
 from datetime import datetime
 import pandas as pd
 from openpyxl import Workbook, load_workbook
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.utils import get_column_letter
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import cm
-from reportlab.pdfgen import canvas
+from reportlab.lib import colors
+from reportlab.lib.enums import TA_CENTER
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
 from PIL import Image, ImageDraw, ImageFont
 
 
@@ -195,34 +200,88 @@ def generar_excel(registros):
     """
     Recibe una lista de filas (sqlite3.Row) con columnas de 'registros' +
     'numero_territorio', y devuelve un BytesIO con un .xlsx listo para descargar.
+
+    El resultado sigue la misma estética que las planillas en papel: encabezado
+    en color con texto en negrita, bordes prolijos en cada celda y filas
+    alternadas para que sea fácil de leer con muchos registros.
     """
     wb = Workbook()
     hoja = wb.active
     hoja.title = "Registros"
 
-    encabezados = [
-        "numero_territorio", "direccion", "telefono", "observaciones",
-        "no_llamar", "funcionan", "notas_internas",
+    # Nombres de columna + etiquetas legibles para mostrar (la clave de la
+    # izquierda es la que se usa para leer cada fila de 'registros').
+    columnas = [
+        ("numero_territorio", "N° Territorio"),
+        ("direccion", "Dirección"),
+        ("telefono", "Teléfono"),
+        ("observaciones", "Observaciones"),
+        ("no_llamar", "No llamar"),
+        ("funcionan", "Funciona"),
+        ("notas_internas", "Notas internas"),
     ]
+    encabezados = [etiqueta for _, etiqueta in columnas]
     hoja.append(encabezados)
 
+    # --- Paleta y estilos reutilizables ---
+    COLOR_HEADER = "F4B183"   # naranja suave, mismo espíritu que las planillas impresas
+    COLOR_FILA_PAR = "FBEEE6"  # banda muy tenue para alternar filas
+
+    relleno_header = PatternFill(start_color=COLOR_HEADER, end_color=COLOR_HEADER, fill_type="solid")
+    relleno_par = PatternFill(start_color=COLOR_FILA_PAR, end_color=COLOR_FILA_PAR, fill_type="solid")
+    fuente_header = Font(bold=True, size=11, color="3B2A1A")
+    alineacion_header = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    alineacion_centro = Alignment(horizontal="center", vertical="center")
+    alineacion_texto = Alignment(horizontal="left", vertical="center", wrap_text=True)
+
+    borde_fino = Side(style="thin", color="BFBFBF")
+    borde_celda = Border(left=borde_fino, right=borde_fino, top=borde_fino, bottom=borde_fino)
+
+    # Columnas que van centradas por ser valores cortos (territorio, sí/no)
+    columnas_centradas = {"numero_territorio", "no_llamar", "funcionan"}
+
+    # --- Encabezado ---
+    for celda in hoja[1]:
+        celda.fill = relleno_header
+        celda.font = fuente_header
+        celda.alignment = alineacion_header
+        celda.border = borde_celda
+    hoja.row_dimensions[1].height = 22
+
+    # --- Filas de datos ---
+    fila_actual = 2
     for reg in registros:
         funcionan = reg["funcionan"]
-        funcionan_texto = "" if funcionan is None else ("Si" if funcionan else "No")
+        funcionan_texto = "" if funcionan is None else ("Sí" if funcionan else "No")
         hoja.append([
             reg["numero_territorio"],
             reg["direccion"] or "",
             reg["telefono"],
             reg["observaciones"] or "",
-            "Si" if reg["no_llamar"] else "No",
+            "Sí" if reg["no_llamar"] else "No",
             funcionan_texto,
             reg["notas_internas"] or "",
         ])
 
+        es_par = (fila_actual % 2 == 0)
+        for col_idx, (clave, _) in enumerate(columnas, start=1):
+            celda = hoja.cell(row=fila_actual, column=col_idx)
+            celda.border = borde_celda
+            celda.alignment = alineacion_centro if clave in columnas_centradas else alineacion_texto
+            if es_par:
+                celda.fill = relleno_par
+
+        fila_actual += 1
+
     # Ancho de columnas prolijo, para que no quede todo apretado
-    anchos = [16, 30, 16, 30, 10, 12, 30]
+    anchos = [14, 30, 16, 32, 12, 12, 30]
     for i, ancho in enumerate(anchos, start=1):
-        hoja.column_dimensions[hoja.cell(row=1, column=i).column_letter].width = ancho
+        hoja.column_dimensions[get_column_letter(i)].width = ancho
+
+    # Encabezado siempre visible al scrollear + filtro rápido por columna
+    hoja.freeze_panes = "A2"
+    if fila_actual > 2:
+        hoja.auto_filter.ref = hoja.dimensions
 
     buffer = io.BytesIO()
     wb.save(buffer)
@@ -236,69 +295,89 @@ def generar_excel(registros):
 
 def generar_pdf(territorio, registros):
     """
-    Genera un PDF simple e imprimible con los datos del territorio y su
-    tabla de registros telefónicos.
+    Genera un PDF prolijo e imprimible con los datos del territorio y su
+    tabla de registros telefónicos: encabezado en color, bordes en toda la
+    tabla y filas alternadas (misma estética que el Excel exportado).
+
+    'No llamar' y 'Funciona' quedan en blanco cuando no hay un dato cargado
+    (en vez de escribir "No" / "Sin verificar"), para no confundir y para
+    que sea cómodo completarlas a mano si se imprime la planilla.
     """
     buffer = io.BytesIO()
-    c = canvas.Canvas(buffer, pagesize=A4)
-    ancho, alto = A4
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        topMargin=1.8 * cm,
+        bottomMargin=1.8 * cm,
+        leftMargin=1.5 * cm,
+        rightMargin=1.5 * cm,
+    )
 
-    margen = 2 * cm
-    y = alto - margen
+    COLOR_HEADER = colors.HexColor("#F4B183")
+    COLOR_FILA_PAR = colors.HexColor("#FBEEE6")
+    COLOR_BORDE = colors.HexColor("#BFBFBF")
+    COLOR_TEXTO_OSCURO = colors.HexColor("#3B2A1A")
 
-    c.setFont("Helvetica-Bold", 16)
-    c.drawString(margen, y, f"Territorio {territorio['numero']}")
-    y -= 0.8 * cm
+    estilos = getSampleStyleSheet()
+    estilo_titulo = ParagraphStyle(
+        "TituloTerritorio", parent=estilos["Heading1"],
+        fontSize=18, spaceAfter=2, textColor=COLOR_TEXTO_OSCURO,
+    )
+    estilo_subtitulo = ParagraphStyle(
+        "Subtitulo", parent=estilos["Normal"],
+        fontSize=11, textColor=colors.HexColor("#555555"), spaceAfter=14,
+    )
+    estilo_celda = ParagraphStyle("Celda", parent=estilos["Normal"], fontSize=9, leading=11)
+    estilo_celda_centro = ParagraphStyle("CeldaCentro", parent=estilo_celda, alignment=TA_CENTER)
+    estilo_encabezado_celda = ParagraphStyle(
+        "EncabezadoCelda", parent=estilos["Normal"], fontSize=9.5, leading=12,
+        textColor=COLOR_TEXTO_OSCURO, alignment=TA_CENTER, fontName="Helvetica-Bold",
+    )
 
-    c.setFont("Helvetica", 11)
-    c.drawString(margen, y, f"Estado: {territorio['estado']}")
-    y -= 1 * cm
+    elementos = [
+        Paragraph(f"Territorio N.° {territorio['numero']}", estilo_titulo),
+        Paragraph(f"Estado: {territorio['estado']}", estilo_subtitulo),
+    ]
 
-    # Encabezados de la tabla
-    columnas = ["Dirección", "Teléfono", "Observaciones", "No llamar", "Funciona"]
-    anchos_col = [5 * cm, 3 * cm, 5 * cm, 2.2 * cm, 2.2 * cm]
-
-    def dibujar_encabezado(y):
-        c.setFont("Helvetica-Bold", 9)
-        x = margen
-        for texto, ancho_col in zip(columnas, anchos_col):
-            c.drawString(x, y, texto)
-            x += ancho_col
-        return y - 0.5 * cm
-
-    y = dibujar_encabezado(y)
-    c.setFont("Helvetica", 9)
+    encabezados = ["Dirección", "Teléfono", "Observaciones", "No llamar", "Funciona"]
+    filas = [[Paragraph(h, estilo_encabezado_celda) for h in encabezados]]
 
     for reg in registros:
-        if y < margen:  # se acabó la hoja, arrancamos una nueva página
-            c.showPage()
-            y = alto - margen
-            y = dibujar_encabezado(y)
-            c.setFont("Helvetica", 9)
-
+        # En blanco si no hay dato cargado, para no escribir "No" o
+        # "Sin verificar" en cada fila y que sea fácil completar a mano.
+        no_llamar_txt = "Sí" if reg["no_llamar"] else ""
         if reg["funcionan"] is None:
-            funciona_txt = "Sin verificar"
-        elif reg["funcionan"]:
-            funciona_txt = "Si"
+            funciona_txt = ""
         else:
-            funciona_txt = "No"
+            funciona_txt = "Sí" if reg["funcionan"] else "No"
 
-        valores = [
-            (reg["direccion"] or "—")[:28],
-            reg["telefono"],
-            (reg["observaciones"] or "—")[:28],
-            "Si" if reg["no_llamar"] else "No",
-            funciona_txt,
-        ]
+        filas.append([
+            Paragraph(reg["direccion"] or "—", estilo_celda),
+            Paragraph(reg["telefono"] or "", estilo_celda),
+            Paragraph(reg["observaciones"] or "", estilo_celda),
+            Paragraph(no_llamar_txt, estilo_celda_centro),
+            Paragraph(funciona_txt, estilo_celda_centro),
+        ])
 
-        x = margen
-        for texto, ancho_col in zip(valores, anchos_col):
-            c.drawString(x, y, str(texto))
-            x += ancho_col
+    anchos_col = [5.3 * cm, 2.8 * cm, 5.4 * cm, 2.3 * cm, 2.3 * cm]
+    tabla = Table(filas, colWidths=anchos_col, repeatRows=1)
 
-        y -= 0.5 * cm
+    estilo_tabla = [
+        ("BACKGROUND", (0, 0), (-1, 0), COLOR_HEADER),
+        ("GRID", (0, 0), (-1, -1), 0.6, COLOR_BORDE),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("TOPPADDING", (0, 0), (-1, -1), 5),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+        ("LEFTPADDING", (0, 0), (-1, -1), 6),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+    ]
+    for i in range(1, len(filas)):
+        if i % 2 == 0:
+            estilo_tabla.append(("BACKGROUND", (0, i), (-1, i), COLOR_FILA_PAR))
+    tabla.setStyle(TableStyle(estilo_tabla))
 
-    c.save()
+    elementos.append(tabla)
+    doc.build(elementos)
     buffer.seek(0)
     return buffer
 
@@ -309,14 +388,22 @@ def generar_pdf(territorio, registros):
 
 def generar_png(territorio, registros):
     """
-    Genera una imagen PNG con una tabla simple del territorio, pensada para
+    Genera una imagen PNG con una tabla del territorio, pensada para
     compartir rápido (ej. por WhatsApp) sin necesidad de abrir un PDF.
+
+    Misma estética que el Excel/PDF exportados: encabezado en color y grilla
+    de bordes prolija. 'No llamar' y 'Funciona' quedan en blanco cuando no
+    hay un dato cargado, en vez de escribir "No" / "Sin verificar".
     """
     ancho_img = 900
-    fila_alto = 30
-    alto_img = 100 + fila_alto * (len(registros) + 1)
+    margen_izq = 20
+    margen_der = ancho_img - 20
+    fila_alto = 32
+    alto_titulo = 78
+    alto_encabezado_tabla = 34
+    alto_img = alto_titulo + alto_encabezado_tabla + fila_alto * max(len(registros), 1) + 20
 
-    img = Image.new("RGB", (ancho_img, max(alto_img, 150)), color="white")
+    img = Image.new("RGB", (ancho_img, alto_img), color="white")
     draw = ImageDraw.Draw(img)
 
     try:
@@ -341,37 +428,65 @@ def generar_png(territorio, registros):
             fuente_normal = ImageFont.load_default()
             fuente_negrita = ImageFont.load_default()
 
+    COLOR_HEADER = (244, 177, 131)     # F4B183
+    COLOR_FILA_PAR = (251, 238, 230)   # FBEEE6
+    COLOR_BORDE = (191, 191, 191)      # BFBFBF
+    COLOR_TEXTO_HEADER = (59, 42, 26)  # 3B2A1A
+
     y = 20
-    draw.text((20, y), f"Territorio {territorio['numero']}", fill="black", font=fuente_titulo)
+    draw.text((margen_izq, y), f"Territorio {territorio['numero']}", fill="black", font=fuente_titulo)
     y += 30
-    draw.text((20, y), f"Estado: {territorio['estado']}", fill="black", font=fuente_normal)
-    y += 40
+    draw.text((margen_izq, y), f"Estado: {territorio['estado']}", fill="black", font=fuente_normal)
+    y += 34
 
     columnas = ["Dirección", "Teléfono", "No llamar", "Funciona"]
-    x_pos = [20, 350, 550, 680]
+    anchos_col = [340, 200, 150, 170]
+    x_bordes = [margen_izq]
+    for ancho_col in anchos_col:
+        x_bordes.append(x_bordes[-1] + ancho_col)
 
-    for texto, x in zip(columnas, x_pos):
-        draw.text((x, y), texto, fill="black", font=fuente_negrita)
-    y += fila_alto
-    draw.line((20, y - 5, ancho_img - 20, y - 5), fill="gray")
+    y_tabla_inicio = y
 
-    for reg in registros:
+    # Encabezado con fondo de color
+    draw.rectangle([margen_izq, y, x_bordes[-1], y + alto_encabezado_tabla], fill=COLOR_HEADER)
+    for texto, x_izq in zip(columnas, x_bordes[:-1]):
+        draw.text((x_izq + 8, y + 9), texto, fill=COLOR_TEXTO_HEADER, font=fuente_negrita)
+    y += alto_encabezado_tabla
+
+    for idx, reg in enumerate(registros):
+        if idx % 2 == 1:
+            draw.rectangle([margen_izq, y, x_bordes[-1], y + fila_alto], fill=COLOR_FILA_PAR)
+
+        # En blanco si no hay dato cargado, para no escribir "No" o
+        # "Sin verificar" en cada fila y que sea fácil completar a mano.
+        no_llamar_txt = "Sí" if reg["no_llamar"] else ""
         if reg["funcionan"] is None:
-            funciona_txt = "Sin verificar"
-        elif reg["funcionan"]:
-            funciona_txt = "Si"
+            funciona_txt = ""
         else:
-            funciona_txt = "No"
+            funciona_txt = "Sí" if reg["funcionan"] else "No"
 
         valores = [
-            (reg["direccion"] or "—")[:35],
-            reg["telefono"],
-            "Si" if reg["no_llamar"] else "No",
+            (reg["direccion"] or "—")[:45],
+            reg["telefono"] or "",
+            no_llamar_txt,
             funciona_txt,
         ]
-        for texto, x in zip(valores, x_pos):
-            draw.text((x, y), str(texto), fill="black", font=fuente_normal)
+        for texto, x_izq in zip(valores, x_bordes[:-1]):
+            draw.text((x_izq + 8, y + 9), str(texto), fill="black", font=fuente_normal)
         y += fila_alto
+
+    y_tabla_fin = y
+
+    # Grilla: líneas verticales entre columnas + horizontales entre filas
+    for x in x_bordes:
+        draw.line([(x, y_tabla_inicio), (x, y_tabla_fin)], fill=COLOR_BORDE, width=1)
+    y_linea = y_tabla_inicio
+    draw.line([(margen_izq, y_linea), (x_bordes[-1], y_linea)], fill=COLOR_BORDE, width=1)
+    y_linea += alto_encabezado_tabla
+    draw.line([(margen_izq, y_linea), (x_bordes[-1], y_linea)], fill=COLOR_BORDE, width=1)
+    for _ in registros:
+        y_linea += fila_alto
+        draw.line([(margen_izq, y_linea), (x_bordes[-1], y_linea)], fill=COLOR_BORDE, width=1)
 
     buffer = io.BytesIO()
     img.save(buffer, format="PNG")
