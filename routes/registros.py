@@ -25,11 +25,14 @@ def register_registros(app):
     def actualizar_registro(territorio_id):
         """
         Guarda los cambios editables de UN registro telefónico:
-        observaciones, no_llamar, funcionan, notas_internas.
+        dirección, teléfono, observaciones, no_llamar, funcionan, notas_internas.
         """
         registro_id = request.form.get("registro_id")
         if not registro_id:
             abort(400)
+
+        direccion = request.form.get("direccion", "").strip() or None
+        telefono = request.form.get("telefono", "").strip()
 
         # Checkbox: si no viene en el form es que estaba destildado
         no_llamar = 1 if request.form.get("no_llamar") else 0
@@ -49,7 +52,6 @@ def register_registros(app):
         conn = get_connection()
 
         # Verificamos que el registro exista Y pertenezca a este territorio
-        # (evita que alguien edite un registro de otro territorio cambiando la URL)
         registro = conn.execute(
             "SELECT * FROM registros WHERE id = ? AND territorio_id = ?",
             (registro_id, territorio_id),
@@ -58,13 +60,16 @@ def register_registros(app):
             conn.close()
             abort(404)
 
+        if not telefono:
+            telefono = registro["telefono"]
+
         conn.execute(
             """
             UPDATE registros
-            SET observaciones = ?, no_llamar = ?, funcionan = ?, notas_internas = ?
+            SET direccion = ?, telefono = ?, observaciones = ?, no_llamar = ?, funcionan = ?, notas_internas = ?
             WHERE id = ?
             """,
-            (observaciones, no_llamar, funcionan, notas_internas, registro_id),
+            (direccion, telefono, observaciones, no_llamar, funcionan, notas_internas, registro_id),
         )
 
         ahora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -73,12 +78,59 @@ def register_registros(app):
             INSERT INTO actividad (territorio_id, registro_id, tipo, descripcion, fecha)
             VALUES (?, ?, 'EDICION', ?, ?)
             """,
-            (territorio_id, registro_id, f"Registro {registro['telefono']} actualizado", ahora),
+            (territorio_id, registro_id, f"Registro {telefono} actualizado", ahora),
         )
 
         conn.commit()
         conn.close()
 
+        flash(f"Registro {telefono} actualizado correctamente.", "success")
+        return redirect(url_for("territorio_detalle", territorio_id=territorio_id))
+
+    @app.route("/territorio/<int:territorio_id>/nuevo-registro", methods=["POST"])
+    def nuevo_registro(territorio_id):
+        """
+        Agrega un nuevo registro telefónico al territorio.
+        """
+        telefono = request.form.get("telefono", "").strip()
+        if not telefono:
+            flash("El número de teléfono es obligatorio.", "error")
+            return redirect(url_for("territorio_detalle", territorio_id=territorio_id))
+
+        direccion = request.form.get("direccion", "").strip() or None
+        observaciones = request.form.get("observaciones", "").strip() or None
+        notas_internas = request.form.get("notas_internas", "").strip() or None
+        no_llamar = 1 if request.form.get("no_llamar") else 0
+
+        funcionan_raw = request.form.get("funcionan", "")
+        if funcionan_raw == "1":
+            funcionan = 1
+        elif funcionan_raw == "0":
+            funcionan = 0
+        else:
+            funcionan = None
+
+        conn = get_connection()
+        cur = conn.execute(
+            """
+            INSERT INTO registros (territorio_id, direccion, telefono, observaciones, no_llamar, funcionan, notas_internas)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (territorio_id, direccion, telefono, observaciones, no_llamar, funcionan, notas_internas),
+        )
+        nuevo_id = cur.lastrowid
+        ahora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        conn.execute(
+            """
+            INSERT INTO actividad (territorio_id, registro_id, tipo, descripcion, fecha)
+            VALUES (?, ?, 'CREACION', ?, ?)
+            """,
+            (territorio_id, nuevo_id, f"Registro {telefono} agregado", ahora),
+        )
+        conn.commit()
+        conn.close()
+
+        flash(f"Registro {telefono} agregado exitosamente.", "success")
         return redirect(url_for("territorio_detalle", territorio_id=territorio_id))
 
     @app.route("/importar-excel", methods=["GET", "POST"])

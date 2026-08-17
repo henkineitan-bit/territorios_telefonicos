@@ -4,7 +4,7 @@
  * Interactividad y optimizaciones en tiempo real para el panel de territorios:
  * - Búsqueda instantánea en tiempo real sin recargar página
  * - Filtros combinados por estado, responsable y ordenamiento dinámico
- * - Chips de filtros rápidos por localidad y responsable
+ * - Chips de filtros rápidos por estado y responsable
  * - Contador dinámico de resultados visibles
  * - Modal reactivo para creación de nuevos territorios
  * - Accesibilidad por teclado (atajos '/' para buscar, 'Esc' para limpiar/cerrar)
@@ -50,7 +50,11 @@ document.addEventListener("DOMContentLoaded", () => {
         // Actualizar estado activo en los chips rápidos
         chipButtons.forEach((chip) => {
             const tagVal = (chip.dataset.tag || "").toLowerCase();
-            if (query && tagVal && query.includes(tagVal)) {
+            const tagEstado = chip.dataset.tagEstado || "";
+
+            if (tagEstado && estadoFiltro === tagEstado) {
+                chip.classList.add("activo");
+            } else if (tagVal && query && query.includes(tagVal)) {
                 chip.classList.add("activo");
             } else {
                 chip.classList.remove("activo");
@@ -64,7 +68,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const filaEstado = fila.dataset.estado || "";
             const filaRespId = fila.dataset.responsableId || "";
 
-            // Coincidencia de texto (número, responsable, calles/direcciones)
+            // Coincidencia de texto (número o responsable)
             const coincideTexto = !query || searchText.includes(query);
 
             // Coincidencia de estado
@@ -112,7 +116,6 @@ document.addEventListener("DOMContentLoaded", () => {
             } else if (criterio === "antiguos") {
                 const diasA = parseInt(a.dataset.dias, 10);
                 const diasB = parseInt(b.dataset.dias, 10);
-                // Si no está asignado (-1), va al final
                 if (diasA === -1 && diasB === -1) return 0;
                 if (diasA === -1) return 1;
                 if (diasB === -1) return -1;
@@ -180,15 +183,26 @@ document.addEventListener("DOMContentLoaded", () => {
     // Chips de filtrado rápido
     chipButtons.forEach((chip) => {
         chip.addEventListener("click", () => {
-            const tag = chip.dataset.tag || "";
-            if (!inputBuscador) return;
+            const tagEstado = chip.dataset.tagEstado;
+            const tagNombre = chip.dataset.tag;
 
-            if (inputBuscador.value.trim().toLowerCase() === tag.toLowerCase()) {
-                inputBuscador.value = "";
-            } else {
-                inputBuscador.value = tag;
+            if (tagEstado) {
+                if (selectEstado) {
+                    if (selectEstado.value === tagEstado) {
+                        selectEstado.value = "";
+                    } else {
+                        selectEstado.value = tagEstado;
+                    }
+                }
+            } else if (tagNombre && inputBuscador) {
+                if (inputBuscador.value.trim().toLowerCase() === tagNombre.toLowerCase()) {
+                    inputBuscador.value = "";
+                } else {
+                    inputBuscador.value = tagNombre;
+                }
+                inputBuscador.focus();
             }
-            inputBuscador.focus();
+
             aplicarFiltros();
         });
     });

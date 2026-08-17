@@ -17,7 +17,7 @@ def register_territorios(app):
     @app.route("/")
     def index():
         """
-        Lista de territorios con filtros: búsqueda por número o calle (q), estado,
+        Lista de territorios con filtros: búsqueda por número (q), estado,
         responsable asignado (responsable_id) y orden (numero / antiguos / recientes).
         Calcula métricas globales para las tarjetas KPI superiores.
         """
@@ -38,28 +38,7 @@ def register_territorios(app):
         ).fetchone()[0]
         total_lineas = conn.execute("SELECT COUNT(*) FROM registros").fetchone()[0]
 
-        # Calles populares para filtros rápidos
-        calles_populares_db = conn.execute(
-            """
-            SELECT DISTINCT UPPER(TRIM(SUBSTR(direccion, 1, 
-                CASE 
-                    WHEN INSTR(direccion, ' ') > 0 THEN INSTR(direccion, ' ') - 1 
-                    ELSE LENGTH(direccion) 
-                END
-            ))) AS calle_base, COUNT(*) as cant
-            FROM registros
-            WHERE direccion IS NOT NULL AND TRIM(direccion) != ''
-            GROUP BY calle_base
-            HAVING LENGTH(calle_base) > 2
-            ORDER BY cant DESC
-            LIMIT 5
-            """
-        ).fetchall()
-        calles_populares = [c["calle_base"].title() for c in calles_populares_db if c["calle_base"]]
-        if not calles_populares:
-            calles_populares = ["Balcarce", "Mitre", "Rivadavia", "Cangallo", "Fonrouge"]
-
-        # LEFT JOIN con asignaciones activas y registros para obtener líneas y calles
+        # LEFT JOIN con asignaciones activas y registros para conteo de líneas
         sql = """
             SELECT
                 t.id,
@@ -68,8 +47,7 @@ def register_territorios(app):
                 r.id AS responsable_id,
                 r.nombre AS responsable,
                 a.fecha_asignado,
-                COUNT(DISTINCT reg.id) AS total_lineas_territorio,
-                GROUP_CONCAT(DISTINCT reg.direccion) AS direcciones_resumen
+                COUNT(DISTINCT reg.id) AS total_lineas_territorio
             FROM territorios t
             LEFT JOIN asignaciones a
                 ON a.territorio_id = t.id AND a.fecha_finalizacion IS NULL
@@ -77,10 +55,10 @@ def register_territorios(app):
                 ON r.id = a.responsable_id
             LEFT JOIN registros reg
                 ON reg.territorio_id = t.id
-            WHERE (t.numero LIKE ? OR r.nombre LIKE ? OR reg.direccion LIKE ?)
+            WHERE (t.numero LIKE ? OR r.nombre LIKE ?)
         """
         param_q = f"%{q}%"
-        parametros = [param_q, param_q, param_q]
+        parametros = [param_q, param_q]
 
         if estado in ("Disponible", "En trabajo"):
             sql += " AND t.estado = ?"
@@ -129,23 +107,6 @@ def register_territorios(app):
                 t["asignado_texto"] = "—"
                 t["asignado_dias"] = -1
 
-            # Extraer nombres de calles únicos para mostrar resumen limpio
-            raw_dirs = t.get("direcciones_resumen") or ""
-            if raw_dirs:
-                # Tomar los primeros nombres de calles
-                calles_set = []
-                for dir_item in raw_dirs.split(","):
-                    parts = dir_item.strip().split()
-                    if parts:
-                        calle_name = parts[0].title()
-                        if calle_name not in calles_set:
-                            calles_set.append(calle_name)
-                    if len(calles_set) >= 3:
-                        break
-                t["calles_etiquetas"] = calles_set
-            else:
-                t["calles_etiquetas"] = []
-
             territorios.append(t)
 
         return render_template(
@@ -160,7 +121,6 @@ def register_territorios(app):
             total_en_trabajo=total_en_trabajo,
             total_disponibles=total_disponibles,
             total_lineas=total_lineas,
-            calles_populares=calles_populares,
         )
 
     @app.route("/territorios/nuevo", methods=["POST"])
