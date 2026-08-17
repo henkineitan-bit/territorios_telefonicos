@@ -870,6 +870,94 @@ body.modal-abierto {
     color: var(--text-main);
 }
 
+/* --- Cabecera de detalle de territorio --- */
+.header-detalle-territorio {
+    margin-bottom: 1.5rem;
+}
+
+.breadcrumb {
+    margin-bottom: 1rem;
+}
+
+.territorio-hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.hero-left {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    flex-wrap: wrap;
+}
+
+.hero-title {
+    margin: 0;
+    font-size: 1.7rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text-main);
+}
+
+.hero-badge {
+    display: flex;
+    align-items: center;
+}
+
+.hero-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 0.3rem;
+    box-shadow: var(--shadow-sm);
+}
+
+.hero-actions .btn {
+    border: none;
+    background-color: transparent;
+    color: var(--text-secondary);
+    box-shadow: none;
+}
+
+.hero-actions .btn:hover {
+    background-color: var(--bg-hover);
+    color: var(--text-main);
+}
+
+/* --- Panel de asignación / estado del territorio --- */
+.panel-en-trabajo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.info-asignacion h3 {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.info-asignacion p {
+    margin: 0;
+    font-size: 0.92rem;
+    color: var(--text-secondary);
+}
+
+.detalles-asignacion {
+    margin-top: 0.35rem !important;
+    color: var(--text-muted) !important;
+}
+
 .form-nuevo-resp {
     display: flex;
     gap: 0.6rem;
