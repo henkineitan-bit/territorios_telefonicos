@@ -17,8 +17,9 @@ def register_territorios(app):
     @app.route("/")
     def index():
         """
-        Lista de territorios con filtros: búsqueda por número (q), estado,
+        Lista de territorios con filtros: búsqueda por número o calle (q), estado,
         responsable asignado (responsable_id) y orden (numero / antiguos / recientes).
+        Calcula métricas globales para las tarjetas KPI superiores.
         """
         q = request.args.get("q", "").strip()
         estado = request.args.get("estado", "").strip()
@@ -27,24 +28,59 @@ def register_territorios(app):
 
         conn = get_connection()
 
-        # LEFT JOIN con asignaciones "abiertas" (fecha_finalizacion IS NULL)
-        # para saber quién tiene el territorio en este momento, si alguien lo tiene,
-        # y desde cuándo (a.fecha_asignado).
+        # Métricas globales para los KPI cards
+        total_territorios = conn.execute("SELECT COUNT(*) FROM territorios").fetchone()[0]
+        total_en_trabajo = conn.execute(
+            "SELECT COUNT(*) FROM territorios WHERE estado = 'En trabajo'"
+        ).fetchone()[0]
+        total_disponibles = conn.execute(
+            "SELECT COUNT(*) FROM territorios WHERE estado = 'Disponible'"
+        ).fetchone()[0]
+        total_lineas = conn.execute("SELECT COUNT(*) FROM registros").fetchone()[0]
+
+        # Calles populares para filtros rápidos
+        calles_populares_db = conn.execute(
+            """
+            SELECT DISTINCT UPPER(TRIM(SUBSTR(direccion, 1, 
+                CASE 
+                    WHEN INSTR(direccion, ' ') > 0 THEN INSTR(direccion, ' ') - 1 
+                    ELSE LENGTH(direccion) 
+                END
+            ))) AS calle_base, COUNT(*) as cant
+            FROM registros
+            WHERE direccion IS NOT NULL AND TRIM(direccion) != ''
+            GROUP BY calle_base
+            HAVING LENGTH(calle_base) > 2
+            ORDER BY cant DESC
+            LIMIT 5
+            """
+        ).fetchall()
+        calles_populares = [c["calle_base"].title() for c in calles_populares_db if c["calle_base"]]
+        if not calles_populares:
+            calles_populares = ["Balcarce", "Mitre", "Rivadavia", "Cangallo", "Fonrouge"]
+
+        # LEFT JOIN con asignaciones activas y registros para obtener líneas y calles
         sql = """
             SELECT
                 t.id,
                 t.numero,
                 t.estado,
+                r.id AS responsable_id,
                 r.nombre AS responsable,
-                a.fecha_asignado
+                a.fecha_asignado,
+                COUNT(DISTINCT reg.id) AS total_lineas_territorio,
+                GROUP_CONCAT(DISTINCT reg.direccion) AS direcciones_resumen
             FROM territorios t
             LEFT JOIN asignaciones a
                 ON a.territorio_id = t.id AND a.fecha_finalizacion IS NULL
             LEFT JOIN responsables r
                 ON r.id = a.responsable_id
-            WHERE t.numero LIKE ?
+            LEFT JOIN registros reg
+                ON reg.territorio_id = t.id
+            WHERE (t.numero LIKE ? OR r.nombre LIKE ? OR reg.direccion LIKE ?)
         """
-        parametros = [f"%{q}%"]
+        param_q = f"%{q}%"
+        parametros = [param_q, param_q, param_q]
 
         if estado in ("Disponible", "En trabajo"):
             sql += " AND t.estado = ?"
@@ -54,39 +90,62 @@ def register_territorios(app):
             sql += " AND a.responsable_id = ?"
             parametros.append(responsable_id)
 
+        sql += " GROUP BY t.id"
+
         if orden == "antiguos":
-            # Los que tienen fecha_asignado más vieja van primero.
-            # Los territorios sin asignación activa (fecha_asignado NULL) quedan al final.
             sql += " ORDER BY (a.fecha_asignado IS NULL), a.fecha_asignado ASC"
         elif orden == "recientes":
-            # Igual que "antiguos" pero al revés: asignados más recientemente primero.
             sql += " ORDER BY (a.fecha_asignado IS NULL), a.fecha_asignado DESC"
+        elif orden == "lineas":
+            sql += " ORDER BY total_lineas_territorio DESC"
         else:
-            orden = "numero"  # normalizamos cualquier valor raro que venga por la URL
-            sql += " ORDER BY CAST(t.numero AS INTEGER)"
+            orden = "numero"
+            sql += " ORDER BY CAST(t.numero AS INTEGER), t.numero ASC"
 
         filas = conn.execute(sql, parametros).fetchall()
 
-        # Responsables para el <select> del filtro (todos, activos primero)
+        # Responsables para el select del filtro
         responsables = conn.execute(
             "SELECT id, nombre FROM responsables ORDER BY activo DESC, nombre"
         ).fetchall()
 
         conn.close()
 
-        # Armamos el texto de "Asignado el" acá en Python, en formato DD/MM/YYYY
-        # y sumando cuántos días lleva en trabajo (solo si está 'En trabajo').
         ahora = datetime.now()
         territorios = []
         for fila in filas:
             t = dict(fila)
             if t["estado"] == "En trabajo" and t["fecha_asignado"]:
-                fecha_dt = datetime.strptime(t["fecha_asignado"], "%Y-%m-%d %H:%M:%S")
-                dias = (ahora - fecha_dt).days
-                plural = "" if dias == 1 else "s"
-                t["asignado_texto"] = f"{fecha_dt.strftime('%d/%m/%Y')} ({dias} día{plural})"
+                try:
+                    fecha_dt = datetime.strptime(t["fecha_asignado"], "%Y-%m-%d %H:%M:%S")
+                    dias = (ahora - fecha_dt).days
+                    plural = "" if dias == 1 else "s"
+                    t["asignado_texto"] = f"{fecha_dt.strftime('%d/%m/%Y')} ({dias} día{plural})"
+                    t["asignado_dias"] = dias
+                except Exception:
+                    t["asignado_texto"] = str(t["fecha_asignado"])
+                    t["asignado_dias"] = 0
             else:
                 t["asignado_texto"] = "—"
+                t["asignado_dias"] = -1
+
+            # Extraer nombres de calles únicos para mostrar resumen limpio
+            raw_dirs = t.get("direcciones_resumen") or ""
+            if raw_dirs:
+                # Tomar los primeros nombres de calles
+                calles_set = []
+                for dir_item in raw_dirs.split(","):
+                    parts = dir_item.strip().split()
+                    if parts:
+                        calle_name = parts[0].title()
+                        if calle_name not in calles_set:
+                            calles_set.append(calle_name)
+                    if len(calles_set) >= 3:
+                        break
+                t["calles_etiquetas"] = calles_set
+            else:
+                t["calles_etiquetas"] = []
+
             territorios.append(t)
 
         return render_template(
@@ -97,7 +156,48 @@ def register_territorios(app):
             responsable_id=responsable_id,
             orden=orden,
             responsables=responsables,
+            total_territorios=total_territorios,
+            total_en_trabajo=total_en_trabajo,
+            total_disponibles=total_disponibles,
+            total_lineas=total_lineas,
+            calles_populares=calles_populares,
         )
+
+    @app.route("/territorios/nuevo", methods=["POST"])
+    def nuevo_territorio():
+        """
+        Crea un nuevo territorio rápidamente.
+        """
+        numero = request.form.get("numero", "").strip()
+        if not numero:
+            flash("El número de territorio es obligatorio.", "error")
+            return redirect(url_for("index"))
+
+        conn = get_connection()
+        existente = conn.execute(
+            "SELECT id FROM territorios WHERE numero = ?", (numero,)
+        ).fetchone()
+
+        if existente:
+            conn.close()
+            flash(f"El territorio N.° {numero} ya existe.", "error")
+            return redirect(url_for("index"))
+
+        cur = conn.execute(
+            "INSERT INTO territorios (numero, estado) VALUES (?, 'Disponible')",
+            (numero,)
+        )
+        nuevo_id = cur.lastrowid
+        ahora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        conn.execute(
+            "INSERT INTO actividad (territorio_id, tipo, descripcion, fecha) VALUES (?, 'CREACION', ?, ?)",
+            (nuevo_id, f"Territorio {numero} creado", ahora)
+        )
+        conn.commit()
+        conn.close()
+
+        flash(f"Territorio N.° {numero} creado exitosamente.", "success")
+        return redirect(url_for("territorio_detalle", territorio_id=nuevo_id))
 
 
     @app.route("/territorio/<int:territorio_id>")

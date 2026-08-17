@@ -4,29 +4,54 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Gestión de Territorios{% endblock %}</title>
+    <!-- Fuente Inter de Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block head %}{% endblock %}
 </head>
 <body>
 
-    <header>
-        <h1>Gestión de Territorios</h1>
-        <nav>
-            <a href="{{ url_for('index') }}">Territorios</a>
-            <a href="{{ url_for('responsables') }}">Responsables</a>
-            <a href="{{ url_for('importar_excel_view') }}">Importar Excel</a>
-            <a href="{{ url_for('importar_historial_view') }}">Importar Historial</a>
-            <a href="{{ url_for('exportar_excel') }}">Exportar Excel</a>
-        </nav>
+    <header class="app-header">
+        <div class="header-container">
+            <div class="brand">
+                <a href="{{ url_for('index') }}" class="brand-link">
+                    <span class="brand-title">Gestión de Territorios</span>
+                </a>
+            </div>
+            <nav class="main-nav">
+                <a href="{{ url_for('index') }}" class="nav-item {% if request.endpoint == 'index' %}active{% endif %}">Territorios</a>
+                <a href="{{ url_for('responsables') }}" class="nav-item {% if request.endpoint == 'responsables' %}active{% endif %}">Responsables</a>
+                <a href="{{ url_for('importar_excel_view') }}" class="nav-item {% if request.endpoint == 'importar_excel_view' %}active{% endif %}">Importar Excel</a>
+                <a href="{{ url_for('importar_historial_view') }}" class="nav-item {% if request.endpoint == 'importar_historial_view' %}active{% endif %}">Importar Historial</a>
+                <a href="{{ url_for('exportar_excel') }}" class="nav-item {% if request.endpoint == 'exportar_excel' %}active{% endif %}">Exportar Excel</a>
+            </nav>
+        </div>
     </header>
 
-    <main>
+    <main class="app-main">
+        {% with mensajes = get_flashed_messages(with_categories=true) %}
+            {% if mensajes %}
+                <div class="flashes-container">
+                    {% for categoria, mensaje in mensajes %}
+                        <div class="flash-alert flash-{{ categoria }}">
+                            <span class="flash-text">{{ mensaje }}</span>
+                            <button type="button" class="flash-close" onclick="this.parentElement.remove()">&times;</button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
         {% block content %}
         {% endblock %}
     </main>
 
-    <footer>
-        <p>Proyecto Flask &mdash; en construcción</p>
+    <footer class="app-footer">
+        <p>Sistema de Gestión de Territorios Telefónicos &bull; Versión 2.0</p>
     </footer>
 
+    {% block scripts %}{% endblock %}
 </body>
 </html>
