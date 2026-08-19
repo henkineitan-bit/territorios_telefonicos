@@ -13,62 +13,73 @@
         <div class="hero-left">
             <h2 class="hero-title">Territorio N.° {{ territorio.numero }}</h2>
             <div class="hero-badge">
-                <span class="badge {{ 'badge-en-trabajo' if territorio.estado == 'En trabajo' else 'badge-disponible' }}">
+                <span
+                    class="badge {{ 'badge-en-trabajo' if territorio.estado == 'En trabajo' else 'badge-disponible' }}">
                     {{ territorio.estado }}
                 </span>
             </div>
         </div>
         <div class="hero-actions">
-            <a href="{{ url_for('territorio_historial', territorio_id=territorio.id) }}" class="btn btn-outline btn-sm">Historial</a>
-            <a href="{{ url_for('exportar_excel', territorio_id=territorio.id) }}" class="btn btn-outline btn-sm">Excel</a>
-            <a href="{{ url_for('territorio_exportar_pdf', territorio_id=territorio.id) }}" class="btn btn-outline btn-sm">PDF</a>
-            <a href="{{ url_for('territorio_exportar_png', territorio_id=territorio.id) }}" class="btn btn-outline btn-sm">PNG</a>
+            <a href="{{ url_for('territorio_historial', territorio_id=territorio.id) }}"
+                class="btn btn-outline btn-sm">Historial</a>
+            <a href="{{ url_for('exportar_excel', territorio_id=territorio.id) }}"
+                class="btn btn-outline btn-sm">Excel</a>
+            <a href="{{ url_for('territorio_exportar_pdf', territorio_id=territorio.id) }}"
+                class="btn btn-outline btn-sm">PDF</a>
+            <a href="{{ url_for('territorio_exportar_png', territorio_id=territorio.id) }}"
+                class="btn btn-outline btn-sm">PNG</a>
+            <form method="post" action="{{ url_for('territorio_eliminar', territorio_id=territorio.id) }}"
+                id="form-eliminar-territorio">
+                <button type="button" class="btn btn-danger-subtle btn-sm" id="btn-abrir-eliminar-territorio">Eliminar
+                    territorio</button>
+            </form>
         </div>
     </div>
 </div>
 
 <!-- Panel de Asignación / Estado -->
 {% if territorio.estado == 'Disponible' %}
-    <div class="panel-accion">
-        <h3>Asignar territorio</h3>
-        {% if responsables|length == 0 %}
-            <p class="text-muted">No hay responsables activos todavía. Podés agregarlos en la sección de Responsables.</p>
-        {% else %}
-            <form method="post" action="{{ url_for('territorio_asignar', territorio_id=territorio.id) }}" class="form-asignar">
-                <div class="form-inline-group">
-                    <label for="responsable_id">Responsable:</label>
-                    <select name="responsable_id" id="responsable_id" class="form-control" required>
-                        <option value="" disabled selected>Seleccionar responsable...</option>
-                        {% for r in responsables %}
-                            <option value="{{ r.id }}">{{ r.nombre }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="form-inline-group flex-grow">
-                    <input type="text" name="detalles" placeholder="Detalles o comentarios (opcional)" class="form-control">
-                </div>
-                <button type="submit" class="btn btn-primary">Asignar</button>
-            </form>
+<div class="panel-accion">
+    <h3>Asignar territorio</h3>
+    {% if responsables|length == 0 %}
+    <p class="text-muted">No hay responsables activos todavía. Podés agregarlos en la sección de Responsables.</p>
+    {% else %}
+    <form method="post" action="{{ url_for('territorio_asignar', territorio_id=territorio.id) }}" class="form-asignar">
+        <div class="form-inline-group">
+            <label for="responsable_id">Responsable:</label>
+            <select name="responsable_id" id="responsable_id" class="form-control" required>
+                <option value="" disabled selected>Seleccionar responsable...</option>
+                {% for r in responsables %}
+                <option value="{{ r.id }}">{{ r.nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-inline-group flex-grow">
+            <input type="text" name="detalles" placeholder="Detalles o comentarios (opcional)" class="form-control">
+        </div>
+        <button type="submit" class="btn btn-primary">Asignar</button>
+    </form>
+    {% endif %}
+</div>
+{% elif territorio.estado == 'En trabajo' %}
+<div class="panel-accion panel-en-trabajo">
+    <div class="info-asignacion">
+        <h3>Territorio en trabajo</h3>
+        {% if asignacion_activa %}
+        <p>
+            Responsable actual: <strong>{{ asignacion_activa.responsable_nombre }}</strong>
+            <span class="text-muted">&bull; Asignado el {{ asignacion_activa.fecha_asignado }}</span>
+        </p>
+        {% if asignacion_activa.detalles %}
+        <p class="detalles-asignacion"><em>"{{ asignacion_activa.detalles }}"</em></p>
+        {% endif %}
         {% endif %}
     </div>
-{% elif territorio.estado == 'En trabajo' %}
-    <div class="panel-accion panel-en-trabajo">
-        <div class="info-asignacion">
-            <h3>Territorio en trabajo</h3>
-            {% if asignacion_activa %}
-                <p>
-                    Responsable actual: <strong>{{ asignacion_activa.responsable_nombre }}</strong>
-                    <span class="text-muted">&bull; Asignado el {{ asignacion_activa.fecha_asignado }}</span>
-                </p>
-                {% if asignacion_activa.detalles %}
-                    <p class="detalles-asignacion"><em>"{{ asignacion_activa.detalles }}"</em></p>
-                {% endif %}
-            {% endif %}
-        </div>
-        <form method="post" action="{{ url_for('territorio_finalizar', territorio_id=territorio.id) }}" onsubmit="return confirm('¿Confirmás que deseás finalizar el trabajo de este territorio?');">
-            <button type="submit" class="btn btn-warning">Finalizar Trabajo</button>
-        </form>
-    </div>
+    <form method="post" action="{{ url_for('territorio_finalizar', territorio_id=territorio.id) }}"
+        onsubmit="return confirm('¿Confirmás que deseás finalizar el trabajo de este territorio?');">
+        <button type="submit" class="btn btn-warning">Finalizar Trabajo</button>
+    </form>
+</div>
 {% endif %}
 
 <!-- Sección de Registros Telefónicos -->
@@ -86,76 +97,72 @@
     </div>
 
     {% if registros|length == 0 %}
-        <div class="estado-vacio">
-            <p class="vacio-titulo">Este territorio todavía no tiene registros cargados</p>
-            <p class="vacio-sub">Podés agregar un registro manualmente o importar desde un archivo Excel.</p>
-            <button type="button" class="btn btn-primary btn-sm" id="btn-crear-primer-reg">+ Agregar Primer Registro</button>
-        </div>
+    <div class="estado-vacio">
+        <p class="vacio-titulo">Este territorio todavía no tiene registros cargados</p>
+        <p class="vacio-sub">Podés agregar un registro manualmente o importar desde un archivo Excel.</p>
+        <button type="button" class="btn btn-primary btn-sm" id="btn-crear-primer-reg">+ Agregar Primer
+            Registro</button>
+    </div>
     {% else %}
-        <div class="table-responsive">
-            <table class="tabla-moderna tabla-registros-view">
-                <thead>
-                    <tr>
-                        <th>Dirección</th>
-                        <th>Teléfono</th>
-                        <th>Observaciones</th>
-                        <th style="text-align: center; width: 100px;">No llamar</th>
-                        <th style="width: 130px;">¿Funciona?</th>
-                        <th>Notas internas</th>
-                        <th style="text-align: right; width: 100px;">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for reg in registros %}
-                    <tr id="fila-reg-{{ reg.id }}">
-                        <td class="col-direccion">
-                            <strong>{{ reg.direccion or "—" }}</strong>
-                        </td>
-                        <td class="col-telefono">
-                            <span class="telefono-badge">{{ reg.telefono }}</span>
-                        </td>
-                        <td class="col-obs">
-                            {{ reg.observaciones or "—" }}
-                        </td>
-                        <td style="text-align: center;">
-                            {% if reg.no_llamar %}
-                                <span class="badge badge-no-llamar">No llamar</span>
-                            {% else %}
-                                <span class="text-muted">—</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if reg.funcionan is none %}
-                                <span class="badge badge-libre">Sin verificar</span>
-                            {% elif reg.funcionan == 1 %}
-                                <span class="badge badge-disponible">Sí</span>
-                            {% else %}
-                                <span class="badge badge-error">No</span>
-                            {% endif %}
-                        </td>
-                        <td class="col-notas">
-                            {{ reg.notas_internas or "—" }}
-                        </td>
-                        <td style="text-align: right;">
-                            <button
-                                type="button"
-                                class="btn btn-sm btn-outline btn-editar-reg"
-                                data-id="{{ reg.id }}"
-                                data-direccion="{{ reg.direccion or '' }}"
-                                data-telefono="{{ reg.telefono or '' }}"
-                                data-observaciones="{{ reg.observaciones or '' }}"
-                                data-no-llamar="{{ 1 if reg.no_llamar else 0 }}"
-                                data-funcionan="{{ '' if reg.funcionan is none else reg.funcionan }}"
-                                data-notas-internas="{{ reg.notas_internas or '' }}"
-                            >
-                                Editar
-                            </button>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+    <div class="table-responsive">
+        <table class="tabla-moderna tabla-registros-view">
+            <thead>
+                <tr>
+                    <th>Dirección</th>
+                    <th>Teléfono</th>
+                    <th>Observaciones</th>
+                    <th style="text-align: center; width: 100px;">No llamar</th>
+                    <th style="width: 130px;">¿Funciona?</th>
+                    <th>Notas internas</th>
+                    <th style="text-align: right; width: 100px;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for reg in registros %}
+                <tr id="fila-reg-{{ reg.id }}">
+                    <td class="col-direccion">
+                        <strong>{{ reg.direccion or "—" }}</strong>
+                    </td>
+                    <td class="col-telefono">
+                        <span class="telefono-badge">{{ reg.telefono }}</span>
+                    </td>
+                    <td class="col-obs">
+                        {{ reg.observaciones or "—" }}
+                    </td>
+                    <td style="text-align: center;">
+                        {% if reg.no_llamar %}
+                        <span class="badge badge-no-llamar">No llamar</span>
+                        {% else %}
+                        <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if reg.funcionan is none %}
+                        <span class="badge badge-libre">Sin verificar</span>
+                        {% elif reg.funcionan == 1 %}
+                        <span class="badge badge-disponible">Sí</span>
+                        {% else %}
+                        <span class="badge badge-error">No</span>
+                        {% endif %}
+                    </td>
+                    <td class="col-notas">
+                        {{ reg.notas_internas or "—" }}
+                    </td>
+                    <td style="text-align: right;">
+                        <button type="button" class="btn btn-sm btn-outline btn-editar-reg" data-id="{{ reg.id }}"
+                            data-direccion="{{ reg.direccion or '' }}" data-telefono="{{ reg.telefono or '' }}"
+                            data-observaciones="{{ reg.observaciones or '' }}"
+                            data-no-llamar="{{ 1 if reg.no_llamar else 0 }}"
+                            data-funcionan="{{ '' if reg.funcionan is none else reg.funcionan }}"
+                            data-notas-internas="{{ reg.notas_internas or '' }}">
+                            Editar
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
     {% endif %}
 </section>
 
@@ -166,25 +173,30 @@
             <h3>Editar Registro Telefónico</h3>
             <button type="button" class="modal-close" id="btn-cerrar-modal-editar">&times;</button>
         </div>
-        <form method="post" action="{{ url_for('actualizar_registro', territorio_id=territorio.id) }}" id="form-editar-registro">
+        <form method="post" action="{{ url_for('actualizar_registro', territorio_id=territorio.id) }}"
+            id="form-editar-registro">
             <input type="hidden" name="registro_id" id="edit_registro_id">
             <div class="modal-body">
                 <div class="form-group">
                     <label for="edit_direccion">Dirección</label>
-                    <input type="text" name="direccion" id="edit_direccion" class="form-control" placeholder="Ej: Av. Balcarce 123">
+                    <input type="text" name="direccion" id="edit_direccion" class="form-control"
+                        placeholder="Ej: Av. Balcarce 123">
                 </div>
 
                 <div class="form-group">
                     <label for="edit_telefono">Teléfono <span class="req">*</span></label>
-                    <input type="text" name="telefono" id="edit_telefono" class="form-control" required placeholder="Ej: 4243-1234">
+                    <input type="text" name="telefono" id="edit_telefono" class="form-control" required
+                        placeholder="Ej: 4243-1234">
                 </div>
 
                 <div class="form-group">
                     <label for="edit_observaciones">Observaciones</label>
-                    <input type="text" name="observaciones" id="edit_observaciones" class="form-control" placeholder="Ej: Timbre 1B, atiende de mañana...">
+                    <input type="text" name="observaciones" id="edit_observaciones" class="form-control"
+                        placeholder="Ej: Timbre 1B, atiende de mañana...">
                 </div>
 
-                <div class="form-group" style="display: flex; gap: 1.5rem; align-items: center; margin-top: 0.5rem; margin-bottom: 1rem;">
+                <div class="form-group"
+                    style="display: flex; gap: 1.5rem; align-items: center; margin-top: 0.5rem; margin-bottom: 1rem;">
                     <div style="flex: 1;">
                         <label for="edit_funcionan">¿Funciona la línea?</label>
                         <select name="funcionan" id="edit_funcionan" class="form-control">
@@ -195,7 +207,8 @@
                     </div>
 
                     <div style="padding-top: 1.5rem;">
-                        <label style="display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 600;">
+                        <label
+                            style="display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 600;">
                             <input type="checkbox" name="no_llamar" id="edit_no_llamar" value="1">
                             No llamar
                         </label>
@@ -204,7 +217,8 @@
 
                 <div class="form-group">
                     <label for="edit_notas_internas">Notas internas</label>
-                    <input type="text" name="notas_internas" id="edit_notas_internas" class="form-control" placeholder="Notas solo visibles para administración...">
+                    <input type="text" name="notas_internas" id="edit_notas_internas" class="form-control"
+                        placeholder="Notas solo visibles para administración...">
                 </div>
             </div>
             <div class="modal-footer">
@@ -222,24 +236,29 @@
             <h3>Nuevo Registro Telefónico</h3>
             <button type="button" class="modal-close" id="btn-cerrar-modal-nuevo">&times;</button>
         </div>
-        <form method="post" action="{{ url_for('nuevo_registro', territorio_id=territorio.id) }}" id="form-nuevo-registro">
+        <form method="post" action="{{ url_for('nuevo_registro', territorio_id=territorio.id) }}"
+            id="form-nuevo-registro">
             <div class="modal-body">
                 <div class="form-group">
                     <label for="nuevo_direccion">Dirección</label>
-                    <input type="text" name="direccion" id="nuevo_direccion" class="form-control" placeholder="Ej: Av. Balcarce 123">
+                    <input type="text" name="direccion" id="nuevo_direccion" class="form-control"
+                        placeholder="Ej: Av. Balcarce 123">
                 </div>
 
                 <div class="form-group">
                     <label for="nuevo_telefono">Teléfono <span class="req">*</span></label>
-                    <input type="text" name="telefono" id="nuevo_telefono" class="form-control" required placeholder="Ej: 4243-1234">
+                    <input type="text" name="telefono" id="nuevo_telefono" class="form-control" required
+                        placeholder="Ej: 4243-1234">
                 </div>
 
                 <div class="form-group">
                     <label for="nuevo_observaciones">Observaciones</label>
-                    <input type="text" name="observaciones" id="nuevo_observaciones" class="form-control" placeholder="Ej: Timbre 1B, atiende de mañana...">
+                    <input type="text" name="observaciones" id="nuevo_observaciones" class="form-control"
+                        placeholder="Ej: Timbre 1B, atiende de mañana...">
                 </div>
 
-                <div class="form-group" style="display: flex; gap: 1.5rem; align-items: center; margin-top: 0.5rem; margin-bottom: 1rem;">
+                <div class="form-group"
+                    style="display: flex; gap: 1.5rem; align-items: center; margin-top: 0.5rem; margin-bottom: 1rem;">
                     <div style="flex: 1;">
                         <label for="nuevo_funcionan">¿Funciona la línea?</label>
                         <select name="funcionan" id="nuevo_funcionan" class="form-control">
@@ -250,7 +269,8 @@
                     </div>
 
                     <div style="padding-top: 1.5rem;">
-                        <label style="display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 600;">
+                        <label
+                            style="display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 600;">
                             <input type="checkbox" name="no_llamar" id="nuevo_no_llamar" value="1">
                             No llamar
                         </label>
@@ -259,7 +279,8 @@
 
                 <div class="form-group">
                     <label for="nuevo_notas_internas">Notas internas</label>
-                    <input type="text" name="notas_internas" id="nuevo_notas_internas" class="form-control" placeholder="Notas solo visibles para administración...">
+                    <input type="text" name="notas_internas" id="nuevo_notas_internas" class="form-control"
+                        placeholder="Notas solo visibles para administración...">
                 </div>
             </div>
             <div class="modal-footer">
@@ -270,88 +291,171 @@
     </div>
 </div>
 
+<!-- Modal: Confirmar Eliminación de Territorio -->
+<div id="modal-eliminar-territorio" class="modal-backdrop oculto">
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <h3>Eliminar territorio</h3>
+            <button type="button" class="modal-close" id="btn-cerrar-modal-eliminar">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p class="alerta-peligro-texto">Esta acción es <strong>irreversible</strong>.</p>
+            <p>
+                Se eliminará el Territorio N.° <strong>{{ territorio.numero }}</strong>, junto con todos
+                sus registros telefónicos, asignaciones e historial de actividad.
+            </p>
+            <div class="form-group" style="margin-top: 1rem;">
+                <label for="confirmar-numero-territorio">
+                    Para confirmar, escribí el número del territorio (<strong>{{ territorio.numero }}</strong>):
+                </label>
+                <input type="text" id="confirmar-numero-territorio" class="form-control" autocomplete="off"
+                    placeholder="{{ territorio.numero }}">
+                <p id="error-confirmar-eliminar" class="texto-error oculto">El número no coincide. Revisá e intentá de
+                    nuevo.</p>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-outline" id="btn-cancelar-modal-eliminar">Cancelar</button>
+            <button type="button" class="btn btn-danger" id="btn-confirmar-eliminar-territorio">Eliminar
+                definitivamente</button>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
+
 
 {% block scripts %}
 <script>
-document.addEventListener("DOMContentLoaded", () => {
-    // Modal Editar
-    const modalEditar = document.getElementById("modal-editar-registro");
-    const btnCerrarEditar = document.getElementById("btn-cerrar-modal-editar");
-    const btnCancelarEditar = document.getElementById("btn-cancelar-modal-editar");
-    const editId = document.getElementById("edit_registro_id");
-    const editDir = document.getElementById("edit_direccion");
-    const editTel = document.getElementById("edit_telefono");
-    const editObs = document.getElementById("edit_observaciones");
-    const editNoLlamar = document.getElementById("edit_no_llamar");
-    const editFunc = document.getElementById("edit_funcionan");
-    const editNotas = document.getElementById("edit_notas_internas");
+    document.addEventListener("DOMContentLoaded", () => {
+        // Modal Editar
+        const modalEditar = document.getElementById("modal-editar-registro");
+        const btnCerrarEditar = document.getElementById("btn-cerrar-modal-editar");
+        const btnCancelarEditar = document.getElementById("btn-cancelar-modal-editar");
+        const editId = document.getElementById("edit_registro_id");
+        const editDir = document.getElementById("edit_direccion");
+        const editTel = document.getElementById("edit_telefono");
+        const editObs = document.getElementById("edit_observaciones");
+        const editNoLlamar = document.getElementById("edit_no_llamar");
+        const editFunc = document.getElementById("edit_funcionan");
+        const editNotas = document.getElementById("edit_notas_internas");
 
-    document.querySelectorAll(".btn-editar-reg").forEach(btn => {
-        btn.addEventListener("click", () => {
-            editId.value = btn.dataset.id;
-            editDir.value = btn.dataset.direccion || "";
-            editTel.value = btn.dataset.telefono || "";
-            editObs.value = btn.dataset.observaciones || "";
-            editNoLlamar.checked = btn.dataset.noLlamar === "1";
-            editFunc.value = btn.dataset.funcionan;
-            editNotas.value = btn.dataset.notasInternas || "";
+        document.querySelectorAll(".btn-editar-reg").forEach(btn => {
+            btn.addEventListener("click", () => {
+                editId.value = btn.dataset.id;
+                editDir.value = btn.dataset.direccion || "";
+                editTel.value = btn.dataset.telefono || "";
+                editObs.value = btn.dataset.observaciones || "";
+                editNoLlamar.checked = btn.dataset.noLlamar === "1";
+                editFunc.value = btn.dataset.funcionan;
+                editNotas.value = btn.dataset.notasInternas || "";
 
-            modalEditar.classList.remove("oculto");
+                modalEditar.classList.remove("oculto");
+                document.body.classList.add("modal-abierto");
+                editTel.focus();
+            });
+        });
+
+        function cerrarEditar() {
+            modalEditar.classList.add("oculto");
+            document.body.classList.remove("modal-abierto");
+        }
+
+        if (btnCerrarEditar) btnCerrarEditar.addEventListener("click", cerrarEditar);
+        if (btnCancelarEditar) btnCancelarEditar.addEventListener("click", cerrarEditar);
+        if (modalEditar) {
+            modalEditar.addEventListener("click", (e) => {
+                if (e.target === modalEditar) cerrarEditar();
+            });
+        }
+
+        // Modal Nuevo
+        const modalNuevo = document.getElementById("modal-nuevo-registro");
+        const btnAbrirNuevo = document.getElementById("btn-abrir-nuevo-reg");
+        const btnCrearPrimer = document.getElementById("btn-crear-primer-reg");
+        const btnCerrarNuevo = document.getElementById("btn-cerrar-modal-nuevo");
+        const btnCancelarNuevo = document.getElementById("btn-cancelar-modal-nuevo");
+
+        function abrirNuevo() {
+            modalNuevo.classList.remove("oculto");
             document.body.classList.add("modal-abierto");
-            editTel.focus();
+            const inp = document.getElementById("nuevo_telefono");
+            if (inp) inp.focus();
+        }
+
+        function cerrarNuevo() {
+            modalNuevo.classList.add("oculto");
+            document.body.classList.remove("modal-abierto");
+        }
+
+        if (btnAbrirNuevo) btnAbrirNuevo.addEventListener("click", abrirNuevo);
+        if (btnCrearPrimer) btnCrearPrimer.addEventListener("click", abrirNuevo);
+        if (btnCerrarNuevo) btnCerrarNuevo.addEventListener("click", cerrarNuevo);
+        if (btnCancelarNuevo) btnCancelarNuevo.addEventListener("click", cerrarNuevo);
+        if (modalNuevo) {
+            modalNuevo.addEventListener("click", (e) => {
+                if (e.target === modalNuevo) cerrarNuevo();
+            });
+        }
+
+        // Esc para cerrar modales
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") {
+                if (!modalEditar.classList.contains("oculto")) cerrarEditar();
+                if (!modalNuevo.classList.contains("oculto")) cerrarNuevo();
+                if (modalEliminar && !modalEliminar.classList.contains("oculto")) cerrarEliminar();
+            }
         });
-    });
 
-    function cerrarEditar() {
-        modalEditar.classList.add("oculto");
-        document.body.classList.remove("modal-abierto");
-    }
+        // Modal Eliminar Territorio
+        const numeroTerritorio = "{{ territorio.numero }}";
+        const modalEliminar = document.getElementById("modal-eliminar-territorio");
+        const btnAbrirEliminar = document.getElementById("btn-abrir-eliminar-territorio");
+        const btnCerrarEliminar = document.getElementById("btn-cerrar-modal-eliminar");
+        const btnCancelarEliminar = document.getElementById("btn-cancelar-modal-eliminar");
+        const btnConfirmarEliminar = document.getElementById("btn-confirmar-eliminar-territorio");
+        const inputConfirmarNumero = document.getElementById("confirmar-numero-territorio");
+        const errorConfirmarEliminar = document.getElementById("error-confirmar-eliminar");
 
-    if (btnCerrarEditar) btnCerrarEditar.addEventListener("click", cerrarEditar);
-    if (btnCancelarEditar) btnCancelarEditar.addEventListener("click", cerrarEditar);
-    if (modalEditar) {
-        modalEditar.addEventListener("click", (e) => {
-            if (e.target === modalEditar) cerrarEditar();
-        });
-    }
+        function abrirEliminar() {
+            modalEliminar.classList.remove("oculto");
+            document.body.classList.add("modal-abierto");
+            inputConfirmarNumero.value = "";
+            errorConfirmarEliminar.classList.add("oculto");
+            inputConfirmarNumero.focus();
+        }
 
-    // Modal Nuevo
-    const modalNuevo = document.getElementById("modal-nuevo-registro");
-    const btnAbrirNuevo = document.getElementById("btn-abrir-nuevo-reg");
-    const btnCrearPrimer = document.getElementById("btn-crear-primer-reg");
-    const btnCerrarNuevo = document.getElementById("btn-cerrar-modal-nuevo");
-    const btnCancelarNuevo = document.getElementById("btn-cancelar-modal-nuevo");
+        function cerrarEliminar() {
+            modalEliminar.classList.add("oculto");
+            document.body.classList.remove("modal-abierto");
+        }
 
-    function abrirNuevo() {
-        modalNuevo.classList.remove("oculto");
-        document.body.classList.add("modal-abierto");
-        const inp = document.getElementById("nuevo_telefono");
-        if (inp) inp.focus();
-    }
-
-    function cerrarNuevo() {
-        modalNuevo.classList.add("oculto");
-        document.body.classList.remove("modal-abierto");
-    }
-
-    if (btnAbrirNuevo) btnAbrirNuevo.addEventListener("click", abrirNuevo);
-    if (btnCrearPrimer) btnCrearPrimer.addEventListener("click", abrirNuevo);
-    if (btnCerrarNuevo) btnCerrarNuevo.addEventListener("click", cerrarNuevo);
-    if (btnCancelarNuevo) btnCancelarNuevo.addEventListener("click", cerrarNuevo);
-    if (modalNuevo) {
-        modalNuevo.addEventListener("click", (e) => {
-            if (e.target === modalNuevo) cerrarNuevo();
-        });
-    }
-
-    // Esc para cerrar modales
-    document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") {
-            if (!modalEditar.classList.contains("oculto")) cerrarEditar();
-            if (!modalNuevo.classList.contains("oculto")) cerrarNuevo();
+        if (btnAbrirEliminar) btnAbrirEliminar.addEventListener("click", abrirEliminar);
+        if (btnCerrarEliminar) btnCerrarEliminar.addEventListener("click", cerrarEliminar);
+        if (btnCancelarEliminar) btnCancelarEliminar.addEventListener("click", cerrarEliminar);
+        if (modalEliminar) {
+            modalEliminar.addEventListener("click", (e) => {
+                if (e.target === modalEliminar) cerrarEliminar();
+            });
+        }
+        if (inputConfirmarNumero) {
+            inputConfirmarNumero.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    btnConfirmarEliminar.click();
+                }
+            });
+        }
+        if (btnConfirmarEliminar) {
+            btnConfirmarEliminar.addEventListener("click", () => {
+                if (inputConfirmarNumero.value.trim() !== numeroTerritorio) {
+                    errorConfirmarEliminar.classList.remove("oculto");
+                    inputConfirmarNumero.focus();
+                    return;
+                }
+                document.getElementById("form-eliminar-territorio").submit();
+            });
         }
     });
-});
 </script>
 {% endblock %}

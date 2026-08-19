@@ -265,6 +265,35 @@ def register_territorios(app):
         )
 
 
+    @app.route("/territorio/<int:territorio_id>/eliminar", methods=["POST"])
+    def territorio_eliminar(territorio_id):
+        """
+        Elimina definitivamente un territorio junto con sus registros,
+        asignaciones e historial de actividad asociados.
+        """
+        conn = get_connection()
+
+        territorio = conn.execute(
+            "SELECT * FROM territorios WHERE id = ?", (territorio_id,)
+        ).fetchone()
+
+        if territorio is None:
+            conn.close()
+            abort(404)
+
+        numero = territorio["numero"]
+
+        conn.execute("DELETE FROM actividad WHERE territorio_id = ?", (territorio_id,))
+        conn.execute("DELETE FROM asignaciones WHERE territorio_id = ?", (territorio_id,))
+        conn.execute("DELETE FROM registros WHERE territorio_id = ?", (territorio_id,))
+        conn.execute("DELETE FROM territorios WHERE id = ?", (territorio_id,))
+        conn.commit()
+        conn.close()
+
+        flash(f"Territorio N.° {numero} eliminado definitivamente.", "success")
+        return redirect(url_for("index"))
+
+
     @app.route("/territorio/<int:territorio_id>/historial")
     def territorio_historial(territorio_id):
         """
