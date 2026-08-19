@@ -226,6 +226,9 @@ def register_registros(app):
             for err in resumen["detalle_errores"][:10]:  # no inundamos la pantalla
                 flash(err, "error")
 
+        for aviso in resumen.get("avisos_nombres_parecidos", [])[:10]:
+            flash(aviso, "warning")
+
         return redirect(url_for("importar_historial_view"))
 
 

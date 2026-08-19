@@ -7,7 +7,27 @@ pandas), por eso están centralizados acá en vez de repetidos en cada uno.
 """
 
 from datetime import datetime
+import unicodedata
 import pandas as pd
+
+
+def _normalizar_nombre(nombre):
+    """
+    Devuelve una versión 'canónica' de un nombre para poder comparar
+    responsables sin que tildes, mayúsculas o espacios de más generen
+    duplicados (ej: "José Espósito", "jose esposito " y "JOSÉ  ESPÓSITO"
+    deben matchear el mismo responsable).
+
+    No se usa para mostrar en pantalla ni para guardar en la base: solo
+    como clave de comparación interna.
+    """
+    if nombre is None:
+        return ""
+    # Separa cada letra de su tilde/diacrítico y se queda solo con la letra
+    descompuesto = unicodedata.normalize("NFKD", nombre)
+    sin_tildes = "".join(c for c in descompuesto if not unicodedata.combining(c))
+    # Colapsa espacios múltiples y pasa todo a minúsculas
+    return " ".join(sin_tildes.lower().split())
 
 
 def _celda_a_texto(valor):

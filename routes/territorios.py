@@ -368,10 +368,28 @@ def register_territorios(app):
             "UPDATE asignaciones SET fecha_finalizacion = ? WHERE id = ?",
             (ahora, asignacion_activa["id"]),
         )
-        conn.execute(
-            "UPDATE territorios SET estado = 'Disponible' WHERE id = ?",
+
+        # No asumimos que queda "Disponible": recalculamos el estado mirando
+        # si queda alguna OTRA asignación abierta para este territorio. En
+        # uso normal no debería quedar ninguna (el índice único de la base
+        # ya impide que existan dos a la vez), pero si la base tuviera datos
+        # importados de otra forma, esto evita dejar el territorio marcado
+        # como libre cuando en realidad sigue con trabajo abierto.
+        sigue_abierta = conn.execute(
+            "SELECT 1 FROM asignaciones WHERE territorio_id = ? AND fecha_finalizacion IS NULL",
             (territorio_id,),
+        ).fetchone()
+        nuevo_estado = "En trabajo" if sigue_abierta else "Disponible"
+        conn.execute(
+            "UPDATE territorios SET estado = ? WHERE id = ?",
+            (nuevo_estado, territorio_id),
         )
+        if sigue_abierta:
+            flash(
+                f"Se finalizó esa asignación, pero el territorio {territorio['numero']} "
+                "sigue 'En trabajo' porque tiene otra asignación abierta.",
+                "warning",
+            )
         conn.execute(
             """
             INSERT INTO actividad (territorio_id, responsable_id, tipo, descripcion, fecha)

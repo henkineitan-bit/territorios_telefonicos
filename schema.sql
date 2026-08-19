@@ -41,6 +41,14 @@ CREATE TABLE IF NOT EXISTS asignaciones (
     FOREIGN KEY (responsable_id) REFERENCES responsables(id)
 );
 
+-- Regla de integridad: un territorio no puede tener más de una asignación
+-- abierta (fecha_finalizacion NULL) al mismo tiempo. Es un índice único
+-- "parcial": solo aplica a las filas sin finalizar, así que un territorio
+-- puede tener muchas asignaciones cerradas en su historial sin problema.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_una_asignacion_abierta_por_territorio
+ON asignaciones(territorio_id)
+WHERE fecha_finalizacion IS NULL;
+
 -- 5. Tabla de Actividad / Auditoría
 CREATE TABLE IF NOT EXISTS actividad (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
