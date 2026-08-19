@@ -1250,12 +1250,16 @@ body.modal-abierto {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    background-color: #eff6ff;
+    background-color: color-mix(in srgb, var(--color-blue) 12%, transparent);
     padding: 0.35rem 0.8rem;
     border-radius: var(--radius-md);
-    border: 1px solid #bfdbfe;
+    border: 1px solid color-mix(in srgb, var(--color-blue) 35%, transparent);
     font-size: 0.88rem;
-    color: #1e40af;
+    color: var(--color-blue);
+}
+
+.barra-acciones-lote #contador-seleccionados {
+    font-weight: 600;
 }
 
 .tabla-responsables, .tabla-registros, .tabla-historial {
