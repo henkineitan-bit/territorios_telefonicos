@@ -23,8 +23,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const paginacionInfo = document.querySelector(".paginacion-info");
     const contadorTotalHeader = document.querySelector(".header-tabla-responsables small");
 
-    // Modal de edición
-    const modalEditar = document.getElementById("modal-editar");
+    // Modal de edición (controlador reutilizable, ver core/modal.js).
+    // Se conserva el toggle manual de style.display porque el CSS de este
+    // modal lo usaba además de la clase "oculto" (quirk existente).
+    const modalEditarEl = document.getElementById("modal-editar");
     const formEditar = document.getElementById("form-editar-responsable");
     const editNombre = document.getElementById("edit-nombre");
     const editTelefono = document.getElementById("edit-telefono");
@@ -172,8 +174,23 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     // --- MODAL DE EDICIÓN ---
+    // Las funciones se siguen exponiendo en `window` porque responsables.html
+    // las invoca desde atributos onclick/onchange inline (ver sección 1.3 del
+    // plan de refactorización, todavía pendiente).
+    const modalEditar = window.AppModal.crear(modalEditarEl, {
+        onOpen: () => {
+            if (modalEditarEl) modalEditarEl.style.display = "flex";
+            setTimeout(() => {
+                if (editNombre) editNombre.focus();
+            }, 80);
+        },
+        onClose: () => {
+            if (modalEditarEl) modalEditarEl.style.display = "";
+        },
+    });
+
     window.abrirModalEditarDesdeBoton = function(btn) {
-        if (!modalEditar || !formEditar) return;
+        if (!modalEditarEl || !formEditar) return;
         const id = btn.dataset.id;
         const nombre = btn.dataset.nombre || '';
         const telefono = btn.dataset.telefono || '';
@@ -184,34 +201,18 @@ document.addEventListener("DOMContentLoaded", () => {
         if (editTelefono) editTelefono.value = telefono;
         if (editEmail) editEmail.value = email;
 
-        modalEditar.classList.remove('oculto');
-        modalEditar.style.display = 'flex';
-        document.body.classList.add('modal-abierto');
-        setTimeout(() => {
-            if (editNombre) editNombre.focus();
-        }, 80);
+        modalEditar.open();
     };
 
     window.cerrarModalEditar = function() {
-        if (!modalEditar) return;
-        modalEditar.classList.add('oculto');
-        modalEditar.style.display = '';
-        document.body.classList.remove('modal-abierto');
+        modalEditar.close();
     };
-
-    if (modalEditar) {
-        modalEditar.addEventListener("click", (e) => {
-            if (e.target === modalEditar) {
-                cerrarModalEditar();
-            }
-        });
-    }
 
     // --- ATAJOS DE TECLADO ---
     document.addEventListener("keydown", (e) => {
         if (e.key === "Escape") {
-            if (modalEditar && !modalEditar.classList.contains("oculto") && modalEditar.style.display !== "none") {
-                cerrarModalEditar();
+            if (modalEditar.isOpen()) {
+                modalEditar.close();
             } else if (inputBuscador && document.activeElement === inputBuscador && inputBuscador.value) {
                 inputBuscador.value = "";
                 aplicarFiltrosEnVivo();

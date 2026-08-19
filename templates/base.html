@@ -101,6 +101,10 @@
         })();
     </script>
 
+    <!-- Utilidades de JS reutilizables entre páginas (ver docs/Plan_de_Refactorización_y_Arquitectura.pdf, sección 1.2) -->
+    <script src="{{ url_for('static', filename='js/core/modal.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/core/keyboard.js') }}"></script>
+
     {% block scripts %}{% endblock %}
 </body>
 </html>

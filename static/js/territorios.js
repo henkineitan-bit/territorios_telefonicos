@@ -23,12 +23,28 @@ document.addEventListener("DOMContentLoaded", () => {
     const numMostradosEl = document.getElementById("num-mostrados");
     const chipButtons = document.querySelectorAll(".chip-tag");
 
-    // Modal nuevo territorio
-    const modalNuevo = document.getElementById("modal-nuevo-territorio");
-    const btnAbrirModal = document.getElementById("btn-nuevo-territorio");
-    const btnCerrarModal = document.getElementById("btn-cerrar-modal");
-    const btnCancelarModal = document.getElementById("btn-cancelar-modal");
+    // Modal nuevo territorio (controlador reutilizable, ver core/modal.js)
     const inputNuevoNumero = document.getElementById("nuevo_numero");
+    const modalNuevo = window.AppModal.crear(
+        document.getElementById("modal-nuevo-territorio"),
+        {
+            onOpen: () => {
+                // Pequeño delay: da tiempo a que termine la transición de
+                // apertura antes de robar el foco (comportamiento original).
+                setTimeout(() => {
+                    if (inputNuevoNumero) inputNuevoNumero.focus();
+                }, 100);
+            },
+        }
+    );
+
+    window.AppModal.conectarBotones(modalNuevo, {
+        abrir: [document.getElementById("btn-nuevo-territorio")],
+        cerrar: [
+            document.getElementById("btn-cerrar-modal"),
+            document.getElementById("btn-cancelar-modal"),
+        ],
+    });
 
     const filas = Array.from(document.querySelectorAll(".fila-territorio"));
 
@@ -214,48 +230,12 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    // --- MODAL NUEVO TERRITORIO ---
-    function abrirModal() {
-        if (!modalNuevo) return;
-        modalNuevo.classList.remove("oculto");
-        document.body.classList.add("modal-abierto");
-        setTimeout(() => {
-            if (inputNuevoNumero) inputNuevoNumero.focus();
-        }, 100);
-    }
-
-    function cerrarModal() {
-        if (!modalNuevo) return;
-        modalNuevo.classList.add("oculto");
-        document.body.classList.remove("modal-abierto");
-    }
-
-    if (btnAbrirModal) {
-        btnAbrirModal.addEventListener("click", abrirModal);
-    }
-
-    if (btnCerrarModal) {
-        btnCerrarModal.addEventListener("click", cerrarModal);
-    }
-
-    if (btnCancelarModal) {
-        btnCancelarModal.addEventListener("click", cerrarModal);
-    }
-
-    if (modalNuevo) {
-        modalNuevo.addEventListener("click", (e) => {
-            if (e.target === modalNuevo) {
-                cerrarModal();
-            }
-        });
-    }
-
     // --- ATAJOS DE TECLADO ---
     document.addEventListener("keydown", (e) => {
         // 'Esc' para cerrar modal o limpiar búsqueda
         if (e.key === "Escape") {
-            if (modalNuevo && !modalNuevo.classList.contains("oculto")) {
-                cerrarModal();
+            if (modalNuevo.isOpen()) {
+                modalNuevo.close();
             } else if (inputBuscador && document.activeElement === inputBuscador && inputBuscador.value) {
                 inputBuscador.value = "";
                 aplicarFiltros();
