@@ -25,9 +25,8 @@ if not exist venv (
 )
 
 echo Instalando librerias necesarias (puede tardar un minuto)...
-call venv\Scripts\activate.bat
-python -m pip install --upgrade pip >nul
-pip install -r requirements.txt
+venv\Scripts\python.exe -m pip install --upgrade pip >nul
+venv\Scripts\python.exe -m pip install -r requirements.txt
 
 echo.
 echo ===================================================

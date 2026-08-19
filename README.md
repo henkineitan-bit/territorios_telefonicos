@@ -7,16 +7,20 @@ Sistema web local desarrollado en **Flask (Python)** y **SQLite** para la gesti�
 ## 🚀 Inicio Rápido
 
 ### En Windows (Doble Clic)
-Simplemente ejecuta el archivo **`iniciar_app.bat`**. Se levantará el servidor Flask y se abrirá el navegador en `http://127.0.0.1:5000`.
+1. **Primera vez:** Ejecuta **`scripts\instalar.bat`** para crear el entorno virtual e instalar las dependencias.
+2. **Siempre:** Ejecuta **`scripts\iniciar_app.bat`**. Se levantará el servidor Flask y se abrirá el navegador en `http://127.0.0.1:5000`.
+
+> Si `iniciar_app.bat` detecta que no existe el entorno virtual, te pedirá que ejecutes `instalar.bat` primero.
 
 ### Desde la Terminal
-1. Asegúrate de tener las dependencias instaladas:
+1. Crea el entorno virtual e instala dependencias (solo la primera vez):
    ```bash
-   pip install -r requirements.txt
+   python -m venv venv
+   venv\Scripts\python.exe -m pip install -r requirements.txt
    ```
 2. Ejecuta la aplicación:
    ```bash
-   python app.py
+   venv\Scripts\python.exe app.py
    ```
 3. Visita en tu navegador: [http://127.0.0.1:5000](http://127.0.0.1:5000)
 
