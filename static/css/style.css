@@ -6,7 +6,7 @@
 :root {
     --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     
-    /* Paleta de colores primarios y neutros */
+    /* Paleta de colores primarios y neutros (Tema Claro por defecto) */
     --bg-body: #f8fafc;
     --bg-surface: #ffffff;
     --bg-header: #0f172a;
@@ -52,6 +52,154 @@
     --transition-normal: 0.2s ease;
 }
 
+/* --- TEMA NÓRDICO / SLATE (Elegante y equilibrado) --- */
+[data-theme="nordic"] {
+    --bg-body: #0f172a;
+    --bg-surface: #1e293b;
+    --bg-header: #020617;
+    --bg-header-active: #334155;
+    --bg-hover: #334155;
+    
+    --text-main: #f8fafc;
+    --text-secondary: #cbd5e1;
+    --text-muted: #94a3b8;
+    --text-light: #64748b;
+    
+    --border-color: #334155;
+    --border-color-darker: #475569;
+    
+    --color-primary: #38bdf8;
+    --color-primary-hover: #0ea5e9;
+    --color-blue: #38bdf8;
+    --color-blue-hover: #7dd3fc;
+    
+    --color-trabajo: #fbbf24;
+    --color-trabajo-bg: rgba(245, 158, 11, 0.15);
+    --color-trabajo-border: rgba(245, 158, 11, 0.35);
+    
+    --color-disp: #34d399;
+    --color-disp-bg: rgba(16, 185, 129, 0.15);
+    --color-disp-border: rgba(16, 185, 129, 0.35);
+    
+    --color-danger: #f87171;
+    --color-danger-bg: rgba(239, 68, 68, 0.15);
+    --color-danger-border: rgba(239, 68, 68, 0.35);
+}
+
+[data-theme="nordic"] .tabla-moderna th,
+[data-theme="nordic"] .tabla-responsables th,
+[data-theme="nordic"] .tabla-registros th,
+[data-theme="nordic"] .tabla-historial th,
+[data-theme="nordic"] .modal-header,
+[data-theme="nordic"] .modal-footer {
+    background-color: #1e293b;
+    color: #94a3b8;
+}
+
+[data-theme="nordic"] .badge-territorios {
+    background-color: #334155;
+    color: #f8fafc;
+    border-color: #475569;
+}
+
+[data-theme="nordic"] .btn-primary {
+    background-color: #38bdf8;
+    color: #0f172a;
+    border-color: #38bdf8;
+}
+[data-theme="nordic"] .btn-primary:hover {
+    background-color: #7dd3fc;
+    border-color: #7dd3fc;
+}
+
+/* --- TEMA ESMERALDA (Natural y limpio) --- */
+[data-theme="emerald"] {
+    --bg-body: #f4fbf7;
+    --bg-surface: #ffffff;
+    --bg-header: #064e3b;
+    --bg-header-active: #047857;
+    --bg-hover: #e6f7ee;
+    
+    --text-main: #0f291e;
+    --text-secondary: #2d5543;
+    --text-muted: #527967;
+    --text-light: #7da592;
+    
+    --border-color: #cdebd9;
+    --border-color-darker: #9cd3b4;
+    
+    --color-primary: #059669;
+    --color-primary-hover: #047857;
+    --color-blue: #059669;
+    --color-blue-hover: #047857;
+}
+
+[data-theme="emerald"] .search-input,
+[data-theme="emerald"] .select-filtro,
+[data-theme="emerald"] .form-control {
+    border-color: #9cd3b4;
+    color: #0f291e;
+    background-color: #ffffff;
+}
+
+[data-theme="emerald"] .search-input::placeholder {
+    color: #527967;
+}
+
+[data-theme="emerald"] .search-icon {
+    color: #059669;
+}
+
+[data-theme="emerald"] .badge-territorios {
+    background-color: #e6f7ee;
+    color: #065f46;
+    border-color: #a7f3d0;
+}
+
+[data-theme="emerald"] .badge-territorios:hover {
+    background-color: #a7f3d0;
+    color: #064e3b;
+    border-color: #6ee7b7;
+}
+
+/* --- TEMA OCASO CÁLIDO (Warm Sand & Amber) --- */
+[data-theme="warm"] {
+    --bg-body: #faf7f2;
+    --bg-surface: #ffffff;
+    --bg-header: #431407;
+    --bg-header-active: #7c2d12;
+    --bg-hover: #ffedd5;
+    
+    --text-main: #292524;
+    --text-secondary: #57534e;
+    --text-muted: #78716c;
+    --text-light: #a8a29e;
+    
+    --border-color: #fed7aa;
+    --border-color-darker: #fdba74;
+    
+    --color-primary: #ea580c;
+    --color-primary-hover: #c2410c;
+    --color-blue: #ea580c;
+    --color-blue-hover: #c2410c;
+}
+
+[data-theme="warm"] .search-input,
+[data-theme="warm"] .select-filtro,
+[data-theme="warm"] .form-control {
+    border-color: #fdba74;
+    color: #292524;
+    background-color: #ffffff;
+}
+
+[data-theme="warm"] .search-input::placeholder {
+    color: #78716c;
+}
+
+[data-theme="warm"] .search-icon {
+    color: #ea580c;
+}
+
 /* Reset y Base */
 *, *::before, *::after {
     box-sizing: border-box;
@@ -83,8 +231,37 @@ body {
     margin: 0 auto;
     display: flex;
     align-items: center;
-    justify-content: flex-start;
-    gap: 2.5rem;
+    justify-content: space-between;
+    gap: 1.5rem;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+}
+
+.theme-toggle-btn {
+    background-color: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: var(--text-white);
+    padding: 0.4rem 0.75rem;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+}
+
+.theme-toggle-btn:hover {
+    background-color: rgba(255, 255, 255, 0.18);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
 }
 
 .brand {
@@ -547,13 +724,32 @@ body {
 }
 
 .badge-territorios {
-    background-color: #334155;
-    color: #ffffff;
+    background-color: #f1f5f9;
+    color: #1e293b;
+    border: 1px solid #cbd5e1;
+    font-weight: 600;
+    text-decoration: none;
+    padding: 0.3rem 0.75rem;
+    font-size: 0.82rem;
+    transition: all var(--transition-fast);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.badge-territorios:hover {
+    background-color: #e0e7ff;
+    color: #3730a3;
+    border-color: #c7d2fe;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(99, 102, 241, 0.12);
 }
 
 .badge-libre {
-    background-color: #94a3b8;
-    color: #ffffff;
+    background-color: #f8fafc;
+    color: #94a3b8;
+    border: 1px dashed #cbd5e1;
+    font-weight: 500;
+    padding: 0.3rem 0.75rem;
+    font-size: 0.82rem;
 }
 
 /* ==========================================================================
@@ -638,6 +834,28 @@ body {
 }
 .btn-danger:hover {
     background-color: #b91c1c;
+}
+
+.btn-danger-subtle {
+    background-color: var(--color-danger-bg);
+    color: var(--color-danger);
+    border-color: var(--color-danger-border);
+}
+.btn-danger-subtle:hover {
+    background-color: var(--color-danger);
+    color: var(--text-white);
+    border-color: var(--color-danger);
+}
+
+.btn-success-subtle {
+    background-color: var(--color-disp-bg);
+    color: var(--color-disp);
+    border-color: var(--color-disp-border);
+}
+.btn-success-subtle:hover {
+    background-color: var(--color-disp);
+    color: var(--text-white);
+    border-color: var(--color-disp);
 }
 
 .btn-link {
@@ -974,16 +1192,36 @@ body.modal-abierto {
     flex: 1 1 200px;
 }
 
-.buscador-responsables {
+.buscador-responsables-card {
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 0.85rem 1.1rem;
     margin-bottom: 1.5rem;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.buscador-resp-input-wrapper {
+    flex: 1 1 280px;
+    min-width: 200px;
+}
+
+.filtros-resp-selects {
     display: flex;
     align-items: center;
     gap: 0.5rem;
     flex-wrap: wrap;
-    background-color: var(--bg-surface);
-    padding: 0.8rem 1rem;
-    border-radius: var(--radius-md);
-    border: 1px solid var(--border-color);
+}
+
+.filtros-resp-botones {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
 }
 
 .header-tabla-responsables {
@@ -1038,6 +1276,7 @@ body.modal-abierto {
     padding: 0.75rem 0.9rem;
     border-bottom: 1px solid var(--border-color);
     font-size: 0.9rem;
+    vertical-align: middle;
 }
 
 .tabla-registros input[type="text"],
@@ -1067,7 +1306,38 @@ body.modal-abierto {
 
 .col-centrada { text-align: center; }
 .col-derecha { text-align: right; }
-.col-acciones { text-align: right; white-space: nowrap; }
+
+.col-acciones {
+    text-align: right;
+    white-space: nowrap;
+    width: 1%;
+    padding: 0.6rem 0.9rem !important;
+}
+
+.acciones-fila {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.4rem;
+}
+
+.form-en-linea {
+    display: inline-flex;
+    margin: 0;
+    padding: 0;
+}
+
+.btn-editar-resp {
+    color: var(--text-secondary);
+    border-color: var(--border-color-darker);
+    background-color: var(--bg-surface);
+}
+
+.btn-editar-resp:hover {
+    color: var(--color-blue);
+    border-color: #93c5fd;
+    background-color: #eff6ff;
+}
 
 .paginacion-container {
     display: flex;

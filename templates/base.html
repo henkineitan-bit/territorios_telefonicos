@@ -15,18 +15,26 @@
 
     <header class="app-header">
         <div class="header-container">
-            <div class="brand">
-                <a href="{{ url_for('index') }}" class="brand-link">
-                    <span class="brand-title">Gestión de Territorios</span>
-                </a>
+            <div class="header-left">
+                <div class="brand">
+                    <a href="{{ url_for('index') }}" class="brand-link">
+                        <span class="brand-title">Gestión de Territorios</span>
+                    </a>
+                </div>
+                <nav class="main-nav">
+                    <a href="{{ url_for('index') }}" class="nav-item {% if request.endpoint == 'index' %}active{% endif %}">Territorios</a>
+                    <a href="{{ url_for('responsables') }}" class="nav-item {% if request.endpoint == 'responsables' %}active{% endif %}">Responsables</a>
+                    <a href="{{ url_for('importar_excel_view') }}" class="nav-item {% if request.endpoint == 'importar_excel_view' %}active{% endif %}">Importar Excel</a>
+                    <a href="{{ url_for('importar_historial_view') }}" class="nav-item {% if request.endpoint == 'importar_historial_view' %}active{% endif %}">Importar Historial</a>
+                    <a href="{{ url_for('exportar_excel') }}" class="nav-item {% if request.endpoint == 'exportar_excel' %}active{% endif %}">Exportar Excel</a>
+                </nav>
             </div>
-            <nav class="main-nav">
-                <a href="{{ url_for('index') }}" class="nav-item {% if request.endpoint == 'index' %}active{% endif %}">Territorios</a>
-                <a href="{{ url_for('responsables') }}" class="nav-item {% if request.endpoint == 'responsables' %}active{% endif %}">Responsables</a>
-                <a href="{{ url_for('importar_excel_view') }}" class="nav-item {% if request.endpoint == 'importar_excel_view' %}active{% endif %}">Importar Excel</a>
-                <a href="{{ url_for('importar_historial_view') }}" class="nav-item {% if request.endpoint == 'importar_historial_view' %}active{% endif %}">Importar Historial</a>
-                <a href="{{ url_for('exportar_excel') }}" class="nav-item {% if request.endpoint == 'exportar_excel' %}active{% endif %}">Exportar Excel</a>
-            </nav>
+            <div class="header-right">
+                <button type="button" id="theme-toggle" class="theme-toggle-btn" title="Cambiar tema de color" onclick="cambiarTema()">
+                    <span>Paleta:</span>
+                    <span id="theme-text">Original</span>
+                </button>
+            </div>
         </div>
     </header>
 
@@ -51,6 +59,47 @@
     <footer class="app-footer">
         <p>Sistema de Gestión de Territorios Telefónicos &bull; Versión 2.0</p>
     </footer>
+
+    <script>
+        // Gestión de paletas de colores / temas
+        const temas = [
+            { id: 'light', nombre: 'Original' },
+            { id: 'emerald', nombre: 'Esmeralda' },
+            { id: 'nordic', nombre: 'Frio' },
+            { id: 'warm', nombre: 'Calido' }
+        ];
+
+        function aplicarTema(temaId) {
+            const root = document.documentElement;
+            const btnText = document.getElementById('theme-text');
+            
+            if (temaId === 'light') {
+                root.removeAttribute('data-theme');
+            } else {
+                root.setAttribute('data-theme', temaId);
+            }
+            
+            localStorage.setItem('tema_seleccionado', temaId);
+            
+            const temaObj = temas.find(t => t.id === temaId) || temas[0];
+            if (btnText) {
+                btnText.textContent = temaObj.nombre;
+            }
+        }
+
+        function cambiarTema() {
+            const temaActual = localStorage.getItem('tema_seleccionado') || 'light';
+            const indexActual = temas.findIndex(t => t.id === temaActual);
+            const proximoIndex = (indexActual + 1) % temas.length;
+            aplicarTema(temas[proximoIndex].id);
+        }
+
+        // Cargar tema guardado inmediatamente
+        (function() {
+            const guardado = localStorage.getItem('tema_seleccionado') || 'light';
+            aplicarTema(guardado);
+        })();
+    </script>
 
     {% block scripts %}{% endblock %}
 </body>

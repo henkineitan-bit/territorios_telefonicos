@@ -26,38 +26,49 @@
     </div>
 
     <!-- Buscador y Filtros -->
-    <form method="get" action="{{ url_for('responsables') }}" class="buscador buscador-responsables">
-        <input
-            type="text"
-            name="q"
-            placeholder="Buscar por nombre, teléfono o email..."
-            value="{{ q }}"
-            class="input-search"
-        >
+    <form method="get" action="{{ url_for('responsables') }}" class="buscador-responsables-card" id="form-filtros-resp" onsubmit="event.preventDefault();">
+        <div class="search-input-wrapper buscador-resp-input-wrapper">
+            <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input
+                type="text"
+                id="input-buscador-responsables"
+                name="q"
+                placeholder="Buscar por nombre, teléfono o email (tiempo real)..."
+                value="{{ q }}"
+                class="search-input"
+                autocomplete="off"
+            >
+        </div>
 
-        <select name="estado">
-            <option value="" {% if not estado %}selected{% endif %}>Estado: Todos</option>
-            <option value="1" {% if estado == '1' %}selected{% endif %}>Solo Activos</option>
-            <option value="0" {% if estado == '0' %}selected{% endif %}>Solo Inactivos</option>
-        </select>
+        <div class="filtros-resp-selects">
+            <select name="estado" id="filtro-resp-estado" class="select-filtro">
+                <option value="" {% if not estado %}selected{% endif %}>Estado: Todos</option>
+                <option value="1" {% if estado == '1' %}selected{% endif %}>Solo Activos</option>
+                <option value="0" {% if estado == '0' %}selected{% endif %}>Solo Inactivos</option>
+            </select>
 
-        <select name="orden">
-            <option value="nombre_asc" {% if orden == 'nombre_asc' %}selected{% endif %}>Ordenar: Nombre (A-Z)</option>
-            <option value="nombre_desc" {% if orden == 'nombre_desc' %}selected{% endif %}>Ordenar: Nombre (Z-A)</option>
-            <option value="territorios_desc" {% if orden == 'territorios_desc' %}selected{% endif %}>Más territorios asignados</option>
-            <option value="fecha_desc" {% if orden == 'fecha_desc' %}selected{% endif %}>Fecha de alta (Recientes)</option>
-            <option value="fecha_asc" {% if orden == 'fecha_asc' %}selected{% endif %}>Fecha de alta (Antiguos)</option>
-        </select>
+            <select name="orden" id="filtro-resp-orden" class="select-filtro">
+                <option value="nombre_asc" {% if orden == 'nombre_asc' %}selected{% endif %}>Ordenar: Nombre (A-Z)</option>
+                <option value="nombre_desc" {% if orden == 'nombre_desc' %}selected{% endif %}>Ordenar: Nombre (Z-A)</option>
+                <option value="territorios_desc" {% if orden == 'territorios_desc' %}selected{% endif %}>Más territorios asignados</option>
+                <option value="fecha_desc" {% if orden == 'fecha_desc' %}selected{% endif %}>Fecha de alta (Recientes)</option>
+                <option value="fecha_asc" {% if orden == 'fecha_asc' %}selected{% endif %}>Fecha de alta (Antiguos)</option>
+            </select>
 
-        <select name="per_page">
-            <option value="10" {% if per_page == '10' %}selected{% endif %}>10 por pág.</option>
-            <option value="20" {% if per_page == '20' %}selected{% endif %}>20 por pág.</option>
-            <option value="50" {% if per_page == '50' %}selected{% endif %}>50 por pág.</option>
-            <option value="todos" {% if per_page == 'todos' %}selected{% endif %}>Ver todos</option>
-        </select>
+            <select name="per_page" id="filtro-resp-per-page" class="select-filtro" onchange="this.form.submit()">
+                <option value="10" {% if per_page == '10' %}selected{% endif %}>10 por pág.</option>
+                <option value="20" {% if per_page == '20' %}selected{% endif %}>20 por pág.</option>
+                <option value="50" {% if per_page == '50' %}selected{% endif %}>50 por pág.</option>
+                <option value="todos" {% if per_page == 'todos' %}selected{% endif %}>Ver todos</option>
+            </select>
+        </div>
 
-        <button type="submit" class="btn">Filtrar</button>
-        <a href="{{ url_for('responsables') }}" class="btn-link">Limpiar</a>
+        <div class="filtros-resp-botones">
+            <button type="button" id="btn-limpiar-filtros-resp" class="btn btn-outline btn-sm">Limpiar</button>
+        </div>
     </form>
 
     <div class="header-tabla-responsables">
@@ -76,6 +87,12 @@
         <input type="hidden" name="accion" id="lote-accion">
         <div id="lote-inputs-container"></div>
     </form>
+
+    <!-- Mensaje sin resultados para JS reactivo -->
+    <div id="sin-resultados-js" class="estado-vacio oculto">
+        <p class="vacio-titulo">No se encontraron responsables</p>
+        <p class="vacio-sub">Probá modificando el texto de búsqueda o cambiando el filtro de estado.</p>
+    </div>
 
     {% if responsables|length == 0 %}
         <p class="sin-resultados">No se encontraron responsables con los filtros aplicados.</p>
@@ -96,7 +113,18 @@
             </thead>
             <tbody>
                 {% for r in responsables %}
-                <tr id="fila-resp-{{ r.id }}" class="{{ 'fila-inactiva' if not r.activo else '' }}">
+                <tr
+                    id="fila-resp-{{ r.id }}"
+                    class="fila-responsable {{ 'fila-inactiva' if not r.activo else '' }}"
+                    data-id="{{ r.id }}"
+                    data-nombre="{{ r.nombre|lower }}"
+                    data-telefono="{{ (r.telefono or '')|lower }}"
+                    data-email="{{ (r.email or '')|lower }}"
+                    data-activo="{{ '1' if r.activo else '0' }}"
+                    data-territorios="{{ r.territorios_asignados }}"
+                    data-fecha="{{ r.fecha_alta or '' }}"
+                    data-search="{{ r.nombre|lower }} {{ (r.telefono or '')|lower }} {{ (r.email or '')|lower }}"
+                >
                     <td class="col-centrada">
                         <input type="checkbox" class="check-responsable" value="{{ r.id }}" onchange="actualizarSeleccion()">
                     </td>
@@ -134,40 +162,50 @@
                         </span>
                     </td>
                     <td class="col-acciones">
-                        <!-- Botón Editar -->
-                        <button
-                            type="button"
-                            class="btn btn-sm btn-icon"
-                            title="Editar responsable"
-                            data-id="{{ r.id }}"
-                            data-nombre="{{ r.nombre }}"
-                            data-telefono="{{ r.telefono or '' }}"
-                            data-email="{{ r.email or '' }}"
-                            onclick="abrirModalEditarDesdeBoton(this)"
-                        >
-                            Editar
-                        </button>
-
-                        <!-- Botón Activar / Desactivar con confirmación -->
-                        {% if r.activo %}
-                            <form
-                                method="post"
-                                action="{{ url_for('responsable_desactivar', responsable_id=r.id, q=q, estado=estado, orden=orden, page=page, per_page=per_page) }}"
-                                class="form-en-linea"
+                        <div class="acciones-fila">
+                            <!-- Botón Editar -->
+                            <button
+                                type="button"
+                                class="btn btn-sm btn-outline btn-editar-resp"
+                                title="Editar responsable"
+                                data-id="{{ r.id }}"
                                 data-nombre="{{ r.nombre }}"
-                                onsubmit="return confirmarDesactivacion(this);"
+                                data-telefono="{{ r.telefono or '' }}"
+                                data-email="{{ r.email or '' }}"
+                                onclick="abrirModalEditarDesdeBoton(this)"
                             >
-                                <button type="submit" class="btn btn-sm btn-danger">Desactivar</button>
-                            </form>
-                        {% else %}
-                            <form
-                                method="post"
-                                action="{{ url_for('responsable_activar', responsable_id=r.id, q=q, estado=estado, orden=orden, page=page, per_page=per_page) }}"
-                                class="form-en-linea"
-                            >
-                                <button type="submit" class="btn btn-sm btn-success">Reactivar</button>
-                            </form>
-                        {% endif %}
+                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                </svg>
+                                <span>Editar</span>
+                            </button>
+
+                            <!-- Botón Activar / Desactivar con confirmación -->
+                            {% if r.activo %}
+                                <form
+                                    method="post"
+                                    action="{{ url_for('responsable_desactivar', responsable_id=r.id, q=q, estado=estado, orden=orden, page=page, per_page=per_page) }}"
+                                    class="form-en-linea"
+                                    data-nombre="{{ r.nombre }}"
+                                    onsubmit="return confirmarDesactivacion(this);"
+                                >
+                                    <button type="submit" class="btn btn-sm btn-danger-subtle" title="Desactivar responsable">
+                                        Desactivar
+                                    </button>
+                                </form>
+                            {% else %}
+                                <form
+                                    method="post"
+                                    action="{{ url_for('responsable_activar', responsable_id=r.id, q=q, estado=estado, orden=orden, page=page, per_page=per_page) }}"
+                                    class="form-en-linea"
+                                >
+                                    <button type="submit" class="btn btn-sm btn-success-subtle" title="Reactivar responsable">
+                                        Reactivar
+                                    </button>
+                                </form>
+                            {% endif %}
+                        </div>
                     </td>
                 </tr>
                 {% endfor %}
@@ -238,71 +276,14 @@
         </div>
     </div>
 
-    <!-- Scripts JavaScript para interactividad -->
     <script>
-        // Modal de edición
-        function abrirModalEditarDesdeBoton(btn) {
-            const id = btn.dataset.id;
-            const nombre = btn.dataset.nombre || '';
-            const telefono = btn.dataset.telefono || '';
-            const email = btn.dataset.email || '';
-
-            const modal = document.getElementById('modal-editar');
-            const form = document.getElementById('form-editar-responsable');
-            form.action = `/responsables/${id}/editar?q={{ q }}&estado={{ estado }}&orden={{ orden }}&page={{ page }}&per_page={{ per_page }}`;
-            document.getElementById('edit-nombre').value = nombre;
-            document.getElementById('edit-telefono').value = telefono;
-            document.getElementById('edit-email').value = email;
-            modal.classList.remove('oculto');
-            modal.style.display = 'flex';
-            document.getElementById('edit-nombre').focus();
-        }
-
-        function cerrarModalEditar() {
-            const modal = document.getElementById('modal-editar');
-            modal.classList.add('oculto');
-            modal.style.display = '';
-        }
-
-        window.onclick = function(event) {
-            const modal = document.getElementById('modal-editar');
-            if (event.target === modal) {
-                cerrarModalEditar();
-            }
-        };
-
         // Confirmación para desactivar
         function confirmarDesactivacion(form) {
             const nombre = form.dataset.nombre || 'este responsable';
             return confirm(`¿Estás seguro de que deseas desactivar a ${nombre}?`);
         }
 
-        // Selección múltiple y acciones en lote
-        function toggleSelectTodos(master) {
-            const checkboxes = document.querySelectorAll('.check-responsable');
-            checkboxes.forEach(cb => cb.checked = master.checked);
-            actualizarSeleccion();
-        }
-
-        function actualizarSeleccion() {
-            const seleccionados = document.querySelectorAll('.check-responsable:checked');
-            const barra = document.getElementById('barra-lote');
-            const contador = document.getElementById('contador-seleccionados');
-            const master = document.getElementById('check-todos');
-            const todos = document.querySelectorAll('.check-responsable');
-
-            if (seleccionados.length > 0) {
-                barra.classList.remove('oculto');
-                contador.textContent = `${seleccionados.length} seleccionado${seleccionados.length > 1 ? 's' : ''}`;
-            } else {
-                barra.classList.add('oculto');
-            }
-
-            if (master && todos.length > 0) {
-                master.checked = (seleccionados.length === todos.length);
-            }
-        }
-
+        // Ejecutar acción en lote
         function ejecutarAccionLote(accion) {
             const seleccionados = document.querySelectorAll('.check-responsable:checked');
             if (seleccionados.length === 0) return;
@@ -329,4 +310,8 @@
         }
     </script>
 
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/responsables.js') }}"></script>
 {% endblock %}
