@@ -5,15 +5,15 @@ cd /d "%~dp0\.."
 echo ===================================================
 echo   Instalando dependencias - Gestor de Territorios
 echo ===================================================
-echo.
+echo/
 
 where python >nul 2>nul
 if errorlevel 1 (
     echo [ERROR] No se encontro Python instalado o no esta en el PATH.
-    echo.
+    echo/
     echo Instala Python desde https://www.python.org/downloads/
     echo y durante la instalacion marca la casilla "Add Python to PATH".
-    echo.
+    echo/
     pause
     exit /b 1
 )
@@ -21,16 +21,16 @@ if errorlevel 1 (
 if not exist venv (
     echo Creando entorno virtual en .\venv ...
     python -m venv venv
-    echo.
+    echo/
 )
 
 echo Instalando librerias necesarias (puede tardar un minuto)...
 venv\Scripts\python.exe -m pip install --upgrade pip >nul
 venv\Scripts\python.exe -m pip install -r requirements.txt
 
-echo.
+echo/
 echo ===================================================
 echo   Listo! Ahora podes ejecutar iniciar_app.bat
 echo ===================================================
-echo.
+echo/
 pause
