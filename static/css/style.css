@@ -688,6 +688,13 @@ body {
     color: var(--text-secondary);
 }
 
+/* Resalta los territorios que llevan mucho tiempo disponibles (sin
+   reasignar), para detectarlos de un vistazo en el listado. */
+.fecha-txt.texto-alerta {
+    color: #b45309;
+    font-weight: 600;
+}
+
 .lineas-count {
     display: inline-block;
     font-weight: 600;

@@ -80,12 +80,46 @@ def register_territorios(app):
             orden = "numero"
             sql += " ORDER BY CAST(t.numero AS INTEGER), t.numero ASC"
 
+        if orden == "disponibles":
+            # Ordenar por más tiempo disponible requiere la fecha en la que
+            # cada territorio quedó libre, que se calcula más abajo (no es
+            # una columna directa de la tabla). Por eso acá dejamos el orden
+            # por número como base y reordenamos en Python al final.
+            sql += " ORDER BY CAST(t.numero AS INTEGER), t.numero ASC"
+
         filas = conn.execute(sql, parametros).fetchall()
 
         # Responsables para el select del filtro
         responsables = conn.execute(
             "SELECT id, nombre FROM responsables ORDER BY activo DESC, nombre"
         ).fetchall()
+
+        # Fecha en la que cada territorio quedó disponible por última vez:
+        # la fecha_finalizacion de su asignación cerrada más reciente. Si el
+        # territorio nunca fue asignado, se usa su fecha de creación (evento
+        # 'CREACION' en la tabla de actividad) como aproximación razonable.
+        mapa_ultima_finalizacion = {
+            fila["territorio_id"]: fila["fecha"]
+            for fila in conn.execute(
+                """
+                SELECT territorio_id, MAX(fecha_finalizacion) AS fecha
+                FROM asignaciones
+                WHERE fecha_finalizacion IS NOT NULL
+                GROUP BY territorio_id
+                """
+            ).fetchall()
+        }
+        mapa_fecha_creacion = {
+            fila["territorio_id"]: fila["fecha"]
+            for fila in conn.execute(
+                """
+                SELECT territorio_id, MIN(fecha) AS fecha
+                FROM actividad
+                WHERE tipo = 'CREACION'
+                GROUP BY territorio_id
+                """
+            ).fetchall()
+        }
 
         conn.close()
 
@@ -107,7 +141,30 @@ def register_territorios(app):
                 t["asignado_texto"] = "—"
                 t["asignado_dias"] = -1
 
+            # Columna "Disponible hace": solo tiene sentido para territorios
+            # que están libres ahora mismo.
+            t["disponible_texto"] = "—"
+            t["disponible_dias"] = -1
+            if t["estado"] == "Disponible":
+                fecha_disp = mapa_ultima_finalizacion.get(t["id"]) or mapa_fecha_creacion.get(t["id"])
+                if fecha_disp:
+                    try:
+                        fecha_dt = datetime.strptime(fecha_disp, "%Y-%m-%d %H:%M:%S")
+                        dias = (ahora - fecha_dt).days
+                        plural = "" if dias == 1 else "s"
+                        t["disponible_texto"] = f"{fecha_dt.strftime('%d/%m/%Y')} ({dias} día{plural})"
+                        t["disponible_dias"] = dias
+                    except Exception:
+                        pass
+
             territorios.append(t)
+
+        if orden == "disponibles":
+            # Más tiempo disponible primero; los que no están disponibles
+            # (dias == -1) van al final.
+            territorios.sort(
+                key=lambda t: (t["disponible_dias"] == -1, -t["disponible_dias"])
+            )
 
         return render_template(
             "index.html",

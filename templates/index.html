@@ -79,6 +79,7 @@
                 <option value="numero" {% if orden == 'numero' %}selected{% endif %}>Ordenar por: Número</option>
                 <option value="antiguos" {% if orden == 'antiguos' %}selected{% endif %}>Más antiguos asignados</option>
                 <option value="recientes" {% if orden == 'recientes' %}selected{% endif %}>Más recientes</option>
+                <option value="disponibles" {% if orden == 'disponibles' %}selected{% endif %}>Más tiempo disponible</option>
                 <option value="lineas" {% if orden == 'lineas' %}selected{% endif %}>Más líneas telefónicas</option>
             </select>
         </div>
@@ -110,6 +111,7 @@
                     <th style="width: 160px;">Estado</th>
                     <th>Responsable actual</th>
                     <th>Asignado el</th>
+                    <th>Disponible hace</th>
                     <th style="width: 110px; text-align: center;">Líneas</th>
                     <th style="width: 140px; text-align: right;">Acciones</th>
                 </tr>
@@ -124,6 +126,7 @@
                     data-responsable-id="{{ t.responsable_id or '' }}"
                     data-responsable-nombre="{{ (t.responsable or '')|lower }}"
                     data-dias="{{ t.asignado_dias }}"
+                    data-disponible-dias="{{ t.disponible_dias }}"
                     data-lineas="{{ t.total_lineas_territorio }}"
                     data-search="{{ t.numero|lower }} {{ (t.responsable or '')|lower }} {{ t.estado|lower }}"
                 >
@@ -144,6 +147,13 @@
                     </td>
                     <td class="col-fecha">
                         <span class="fecha-txt">{{ t.asignado_texto }}</span>
+                    </td>
+                    <td class="col-disponible-hace">
+                        {% if t.disponible_dias >= 0 %}
+                            <span class="fecha-txt {% if t.disponible_dias >= 60 %}texto-alerta{% endif %}">{{ t.disponible_texto }}</span>
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
                     </td>
                     <td class="col-lineas" style="text-align: center;">
                         <span class="lineas-count">{{ t.total_lineas_territorio }} líneas</span>

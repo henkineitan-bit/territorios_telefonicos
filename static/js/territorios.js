@@ -127,6 +127,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (diasA === -1) return 1;
                 if (diasB === -1) return -1;
                 return diasA - diasB; // Menos días asignado = más reciente primero
+            } else if (criterio === "disponibles") {
+                const dispA = parseInt(a.dataset.disponibleDias, 10);
+                const dispB = parseInt(b.dataset.disponibleDias, 10);
+                if (dispA === -1 && dispB === -1) return 0;
+                if (dispA === -1) return 1;
+                if (dispB === -1) return -1;
+                return dispB - dispA; // Más días disponible primero
             } else if (criterio === "lineas") {
                 const linA = parseInt(a.dataset.lineas, 10) || 0;
                 const linB = parseInt(b.dataset.lineas, 10) || 0;
