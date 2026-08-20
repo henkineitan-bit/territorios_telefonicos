@@ -9,7 +9,7 @@ Rutas para la gestión y exportación de registros telefónicos:
 """
 
 from datetime import datetime
-from flask import render_template, request, abort, redirect, url_for, flash, send_file
+from flask import Blueprint, render_template, request, abort, redirect, url_for, flash, send_file
 from database import get_connection
 from exports import (
     importar_excel,
@@ -18,6 +18,9 @@ from exports import (
     generar_png,
     importar_historial,
 )
+
+
+bp = Blueprint("registros", __name__)
 
 
 def register_registros(app):
@@ -326,4 +329,7 @@ def register_registros(app):
             download_name=f"territorio_{territorio['numero']}.png",
             mimetype="image/png",
         )
+
+
+register_registros(bp)
 

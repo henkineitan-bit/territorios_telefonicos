@@ -9,8 +9,11 @@ Rutas para la gestión y visualización de territorios y sus asignaciones:
 """
 
 from datetime import datetime
-from flask import render_template, request, abort, redirect, url_for, flash
+from flask import Blueprint, render_template, request, abort, redirect, url_for, flash
 from database import get_connection
+
+
+bp = Blueprint("territorios", __name__)
 
 
 def register_territorios(app):
@@ -38,7 +41,17 @@ def register_territorios(app):
         ).fetchone()[0]
         total_lineas = conn.execute("SELECT COUNT(*) FROM registros").fetchone()[0]
 
-        # LEFT JOIN con asignaciones activas y registros para conteo de líneas
+        # LEFT JOIN con asignaciones activas y registros para conteo de líneas.
+        #
+        # El filtrado por texto (q), estado y responsable ya NO se hace acá:
+        # con ~200 territorios, static/js/territorios.js carga la lista
+        # completa una sola vez y resuelve búsqueda/filtro 100% en el
+        # cliente. Antes se filtraba en SQL y el JS volvía a filtrar las
+        # mismas filas en el navegador — doble trabajo para el mismo
+        # resultado (ver docs/Plan_de_Refactorización_y_Arquitectura.pdf,
+        # sección 1.4, criterio "volumen bajo"). q/estado/responsable_id se
+        # siguen recibiendo solo para pre-seleccionar los controles de
+        # filtro al cargar la página.
         sql = """
             SELECT
                 t.id,
@@ -55,20 +68,9 @@ def register_territorios(app):
                 ON r.id = a.responsable_id
             LEFT JOIN registros reg
                 ON reg.territorio_id = t.id
-            WHERE (t.numero LIKE ? OR r.nombre LIKE ?)
+            GROUP BY t.id
         """
-        param_q = f"%{q}%"
-        parametros = [param_q, param_q]
-
-        if estado in ("Disponible", "En trabajo"):
-            sql += " AND t.estado = ?"
-            parametros.append(estado)
-
-        if responsable_id:
-            sql += " AND a.responsable_id = ?"
-            parametros.append(responsable_id)
-
-        sql += " GROUP BY t.id"
+        parametros = []
 
         if orden == "antiguos":
             sql += " ORDER BY (a.fecha_asignado IS NULL), a.fecha_asignado ASC"
@@ -493,5 +495,11 @@ def register_territorios(app):
         conn.close()
 
         return redirect(url_for("territorio_detalle", territorio_id=territorio_id))
+
+
+# La función histórica recibe cualquier objeto con ``route``. Al configurarla
+# sobre el Blueprint conservamos todos los endpoints y pasamos a usar el
+# mecanismo nativo de Flask para registrar controladores.
+register_territorios(bp)
 
 

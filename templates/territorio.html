@@ -4,6 +4,16 @@
 
 {% block content %}
 
+<!--
+    Nota (plan de refactorización, sección 1.6): el riesgo que ahí se
+    describe es interpolar variables de Jinja DENTRO de un <script>
+    (ej. const numero = "{{ territorio.numero }}";), donde el auto-escape
+    HTML de Jinja no protege contra quiebres de sintaxis JS. Este proyecto
+    ya no tiene ningún <script> con variables embebidas (ver sección 1.1):
+    los datos dinámicos viajan por atributos data-*, que si son un
+    contexto HTML normal y Jinja los escapa correctamente ahí. Por eso no
+    hace falta (ni correspondería) aplicar |tojson acá.
+-->
 <div class="header-detalle-territorio" data-territorio-numero="{{ territorio.numero }}">
     <div class="breadcrumb">
         <a href="{{ url_for('index') }}" class="btn-link">&larr; Volver al listado</a>
@@ -76,7 +86,7 @@
         {% endif %}
     </div>
     <form method="post" action="{{ url_for('territorio_finalizar', territorio_id=territorio.id) }}"
-        onsubmit="return confirm('¿Confirmás que deseás finalizar el trabajo de este territorio?');">
+        data-submit-action="confirmar-finalizar-territorio">
         <button type="submit" class="btn btn-warning">Finalizar Trabajo</button>
     </form>
 </div>

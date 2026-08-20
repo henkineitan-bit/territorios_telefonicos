@@ -42,7 +42,7 @@ document.addEventListener("DOMContentLoaded", () => {
             editNoLlamar.checked = btn.dataset.noLlamar === "1";
             editFunc.value = btn.dataset.funcionan;
             editNotas.value = btn.dataset.notasInternas || "";
-            modalEditar.open();
+            modalEditar.open(btn);
         });
     });
 
@@ -127,4 +127,11 @@ document.addEventListener("DOMContentLoaded", () => {
     // Esc cierra el modal que esté abierto (editar > nuevo > eliminar)
     // ------------------------------------------------------------------
     window.AppKeyboard.registrarEscapeParaModales([modalEditar, modalNuevo, modalEliminar]);
+
+    // ------------------------------------------------------------------
+    // Confirmación antes de finalizar el trabajo del territorio
+    // ------------------------------------------------------------------
+    window.AppActions.on("submit", "confirmar-finalizar-territorio", () => {
+        return confirm("¿Confirmás que deseás finalizar el trabajo de este territorio?");
+    });
 });

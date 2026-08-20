@@ -28,12 +28,8 @@ antes, sin pedir nada extra):
 """
 
 import os
-import secrets
 
-from flask import Flask
-from routes.territorios import register_territorios
-from routes.responsables import register_responsables
-from routes.registros import register_registros
+from app import create_app
 
 
 def _leer_bool_env(nombre, default):
@@ -45,29 +41,7 @@ def _leer_bool_env(nombre, default):
 
 
 DEBUG = _leer_bool_env("FLASK_DEBUG", default=True)
-
-secret_key = os.environ.get("FLASK_SECRET_KEY")
-if not secret_key:
-    if DEBUG:
-        # Uso local de siempre: no hace falta configurar nada a mano.
-        # Se genera una clave aleatoria en cada arranque; como la app no
-        # tiene login ni datos sensibles en la sesión, alcanza y sobra.
-        secret_key = secrets.token_hex(32)
-    else:
-        raise RuntimeError(
-            "Falta la variable de entorno FLASK_SECRET_KEY. Es obligatoria "
-            "cuando FLASK_DEBUG está desactivado (por ejemplo, para compartir "
-            "la app en la red local con otras PCs). Definila antes de iniciar "
-            "la aplicación y volvé a intentar."
-        )
-
-app = Flask(__name__)
-app.secret_key = secret_key
-
-# Registrar todas las rutas de los distintos módulos
-register_territorios(app)
-register_responsables(app)
-register_registros(app)
+app = create_app()
 
 if __name__ == "__main__":
     host = os.environ.get("FLASK_HOST", "127.0.0.1")

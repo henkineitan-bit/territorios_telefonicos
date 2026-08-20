@@ -9,10 +9,12 @@ Rutas para la gestión de responsables/publicadores:
 - Acciones masivas en lote
 """
 
-import math
 from datetime import datetime
-from flask import render_template, request, abort, redirect, url_for, flash
+from flask import Blueprint, render_template, request, abort, redirect, url_for, flash
 from database import get_connection
+
+
+bp = Blueprint("responsables", __name__)
 
 
 def register_responsables(app):
@@ -54,20 +56,26 @@ def register_responsables(app):
         q = request.args.get("q", "").strip()
         estado = request.args.get("estado", "").strip()
         orden = request.args.get("orden", "nombre_asc")
-        
+
+        # Con este volumen de datos (decenas de responsables) filtrar/ordenar
+        # en el servidor y paginar de vuelta era más complejo que el beneficio
+        # que aportaba, y era la causa de un bug real: al cambiar el filtro o
+        # el orden en el cliente, solo se recalculaba sobre las filas de la
+        # página ya cargada, no sobre el total. Ahora el servidor entrega
+        # siempre la lista completa y static/js/responsables.js resuelve
+        # búsqueda, filtro, orden y paginación 100% en el cliente sobre el
+        # total real (ver docs/Plan_de_Refactorización_y_Arquitectura.pdf,
+        # sección 1.4, criterio "volumen bajo").
+        #
+        # `page` y `per_page` se siguen aceptando y devolviendo solo para
+        # poder pre-seleccionar los controles de paginación al cargar la
+        # página (por ejemplo, un link compartido con ?per_page=20&page=2) y
+        # para preservarlos en los redirects de las acciones de abajo.
         try:
             page = max(1, int(request.args.get("page", 1)))
         except (ValueError, TypeError):
             page = 1
-
         per_page_raw = request.args.get("per_page", "10")
-        if per_page_raw == "todos":
-            per_page = 999999
-        else:
-            try:
-                per_page = max(5, int(per_page_raw))
-            except (ValueError, TypeError):
-                per_page = 10
 
         sql = """
             SELECT
@@ -83,20 +91,11 @@ def register_responsables(app):
                     WHERE a.responsable_id = r.id AND a.fecha_finalizacion IS NULL
                 ) AS territorios_asignados
             FROM responsables r
-            WHERE 1=1
         """
-        parametros = []
 
-        if q:
-            sql += " AND (r.nombre LIKE ? OR r.telefono LIKE ? OR r.email LIKE ?)"
-            term = f"%{q}%"
-            parametros.extend([term, term, term])
-
-        if estado in ("0", "1"):
-            sql += " AND r.activo = ?"
-            parametros.append(int(estado))
-
-        # Ordenamiento
+        # Ordenamiento (el filtrado por q/estado ahora es exclusivamente
+        # client-side; el orden se mantiene en el servidor para que la
+        # tabla ya aparezca ordenada en el primer render, sin parpadeo).
         if orden == "nombre_desc":
             sql += " ORDER BY r.nombre COLLATE NOCASE DESC"
         elif orden == "territorios_desc":
@@ -109,30 +108,15 @@ def register_responsables(app):
             orden = "nombre_asc"
             sql += " ORDER BY r.activo DESC, r.nombre COLLATE NOCASE ASC"
 
-        filas = conn.execute(sql, parametros).fetchall()
+        responsables_todos = conn.execute(sql).fetchall()
         conn.close()
-
-        total_items = len(filas)
-        total_pages = max(1, math.ceil(total_items / per_page)) if per_page_raw != "todos" else 1
-        if page > total_pages:
-            page = total_pages
-
-        start_idx = (page - 1) * per_page
-        end_idx = start_idx + per_page
-        items_paginados = filas[start_idx:end_idx]
-
-        start_item = (start_idx + 1) if total_items > 0 else 0
-        end_item = min(end_idx, total_items)
 
         return render_template(
             "responsables.html",
-            responsables=items_paginados,
-            total_items=total_items,
-            total_pages=total_pages,
+            responsables=responsables_todos,
+            total_items=len(responsables_todos),
             page=page,
             per_page=per_page_raw,
-            start_item=start_item,
-            end_item=end_item,
             q=q,
             estado=estado,
             orden=orden,
@@ -236,5 +220,8 @@ def register_responsables(app):
         verbo = "desactivaron" if accion == "desactivar" else "reactivaron"
         flash(f"Se {verbo} {len(ids)} responsable(s) en lote exitosamente.", "success")
         return redirect(url_for("responsables", **request.args))
+
+
+register_responsables(bp)
 
 

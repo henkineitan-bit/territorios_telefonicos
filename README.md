@@ -30,10 +30,18 @@ Sistema web local desarrollado en **Flask (Python)** y **SQLite** para la gesti�
 
 ```text
 Territorios Telefonicos/
-├── app.py                  # Servidor Flask principal y definición de endpoints
-├── database.py             # Helpers y conexión a SQLite
-├── exports.py              # Exportaciones a PDF (ReportLab), PNG (Pillow) y Excel (openpyxl)
+├── app.py                  # Punto de entrada compatible (usa create_app)
+├── app/                    # Arquitectura desacoplada
+│   ├── __init__.py         # Application Factory y registro de Blueprints
+│   ├── config.py           # Configuración por entorno
+│   ├── db.py               # Conexión, transacciones y migraciones numeradas
+│   ├── blueprints/         # Controladores HTTP
+│   ├── services/           # Reglas de negocio y casos de uso
+│   └── repositories/       # Consultas SQL aisladas
+├── database.py             # Fachada temporal de compatibilidad para app.db
 ├── schema.sql              # Esquema DDL de las tablas SQL
+├── exports/                # Importación y exportación de archivos
+├── legacy_exports.py       # Implementación anterior conservada como referencia
 ├── territorios.db          # Base de datos SQLite activa
 ├── requirements.txt        # Librerías de Python requeridas
 │
