@@ -450,11 +450,28 @@ def register_territorios(app):
             conn.close()
             return redirect(url_for("territorio_detalle", territorio_id=territorio_id))
 
-        ahora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        fecha_finalizacion = request.form.get("fecha_finalizacion", "").strip()
+        try:
+            fecha_finalizada = datetime.strptime(fecha_finalizacion, "%Y-%m-%d").date()
+        except ValueError:
+            conn.close()
+            flash("Indicá una fecha de finalización válida.", "error")
+            return redirect(url_for("territorio_detalle", territorio_id=territorio_id))
+
+        fecha_asignada = datetime.strptime(
+            asignacion_activa["fecha_asignado"][:10], "%Y-%m-%d"
+        ).date()
+        if fecha_finalizada < fecha_asignada:
+            conn.close()
+            flash("La fecha de finalización no puede ser anterior a la fecha de asignación.", "error")
+            return redirect(url_for("territorio_detalle", territorio_id=territorio_id))
+
+        # Conservamos la fecha real informada, aunque la carga se haga días después.
+        fecha_finalizacion = fecha_finalizada.isoformat()
 
         conn.execute(
             "UPDATE asignaciones SET fecha_finalizacion = ? WHERE id = ?",
-            (ahora, asignacion_activa["id"]),
+            (fecha_finalizacion, asignacion_activa["id"]),
         )
 
         # No asumimos que queda "Disponible": recalculamos el estado mirando
@@ -487,7 +504,7 @@ def register_territorios(app):
                 territorio_id,
                 asignacion_activa["responsable_id"],
                 f"Territorio {territorio['numero']} finalizado",
-                ahora,
+                fecha_finalizacion,
             ),
         )
 

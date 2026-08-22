@@ -1215,6 +1215,66 @@ body.modal-abierto {
     color: var(--text-muted) !important;
 }
 
+.finalizar-territorio {
+    position: relative;
+}
+
+.finalizar-territorio summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    cursor: pointer;
+    list-style: none;
+}
+
+.finalizar-territorio summary::-webkit-details-marker {
+    display: none;
+}
+
+.finalizar-territorio[open] summary span {
+    transform: rotate(180deg);
+}
+
+.finalizar-territorio form {
+    position: absolute;
+    z-index: 2;
+    top: calc(100% + 0.55rem);
+    right: 0;
+    display: grid;
+    gap: 0.55rem;
+    width: min(20rem, calc(100vw - 3rem));
+    padding: 0.9rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--bg-surface);
+    box-shadow: var(--shadow-md);
+}
+
+.finalizar-territorio form label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.finalizar-territorio form .btn {
+    justify-self: start;
+}
+
+@media (max-width: 600px) {
+    .finalizar-territorio {
+        width: 100%;
+    }
+
+    .finalizar-territorio summary {
+        justify-content: center;
+    }
+
+    .finalizar-territorio form {
+        right: auto;
+        width: 100%;
+    }
+}
+
 .form-nuevo-resp {
     display: flex;
     gap: 0.6rem;

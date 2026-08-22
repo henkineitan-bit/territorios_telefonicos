@@ -85,10 +85,15 @@
         {% endif %}
         {% endif %}
     </div>
-    <form method="post" action="{{ url_for('territorio_finalizar', territorio_id=territorio.id) }}"
-        data-submit-action="confirmar-finalizar-territorio">
-        <button type="submit" class="btn btn-warning">Finalizar Trabajo</button>
-    </form>
+    <details class="finalizar-territorio">
+        <summary class="btn btn-warning">Finalizar trabajo <span aria-hidden="true">⌄</span></summary>
+        <form method="post" action="{{ url_for('territorio_finalizar', territorio_id=territorio.id) }}"
+            data-submit-action="confirmar-finalizar-territorio">
+            <label for="fecha_finalizacion">Fecha de finalización:</label>
+            <input type="date" name="fecha_finalizacion" id="fecha_finalizacion" class="form-control" required>
+            <button type="submit" class="btn btn-warning">Confirmar finalización</button>
+        </form>
+    </details>
 </div>
 {% endif %}
 

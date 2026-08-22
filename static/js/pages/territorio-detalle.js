@@ -134,4 +134,13 @@ document.addEventListener("DOMContentLoaded", () => {
     window.AppActions.on("submit", "confirmar-finalizar-territorio", () => {
         return confirm("¿Confirmás que deseás finalizar el trabajo de este territorio?");
     });
+
+    const fechaFinalizacion = document.getElementById("fecha_finalizacion");
+    if (fechaFinalizacion && !fechaFinalizacion.value) {
+        const hoy = new Date();
+        const anio = hoy.getFullYear();
+        const mes = String(hoy.getMonth() + 1).padStart(2, "0");
+        const dia = String(hoy.getDate()).padStart(2, "0");
+        fechaFinalizacion.value = `${anio}-${mes}-${dia}`;
+    }
 });
